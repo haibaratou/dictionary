@@ -39,9 +39,10 @@ window.ETYMOPEDIA_ROOT_NOTES = {
    "sourceSha256": "786baa164eb582e6a966de64d9530b7aedbc7e78f605e5ef30648b0fb7d43e49"
   },
   "weid": {
-   "note": "見ることは、知ること。vision や view はラテン語 videre「見る」の直系で、wise（賢い）と wit（機知）は古英語のまま残った。history は「知っている人」の調べた記録で、story はその短縮形。idol（偶像）のもとは心に浮かぶ像や幻で、今のアイドルまでつながっている。",
+   "note": "見ることは、知ること。vision や view はラテン語 videre「見る」の直系で、wise（賢い）と wit（機知）は古英語のまま残った。魔法使いの wizard は、その wise に「〜な人」の -ard を付けた「賢い人」。もとは賢者や学者のことで、魔術を使う者の意味になったのは1500年代ごろから。history は「知っている人」の調べた記録で、story はその短縮形。idol（偶像）のもとは心に浮かぶ像や幻で、今のアイドルまでつながっている。",
    "source": "support/etymopedia/current-data.js roots[weid-].d",
-   "sourceSha256": "a15b30e9a205129a203bd10a9f46531dd238b81a56f16d5cfdc217e617801d40"
+   "sourceSha256": "a15b30e9a205129a203bd10a9f46531dd238b81a56f16d5cfdc217e617801d40",
+   "added": "魔法使い（wizard）の解説（キャラデザインの核として指定。本編には無い）"
   },
   "ye": {
    "note": "投げる。ラテン語では -ject- の形になり、前へ投げれば project、中へなら inject、外へなら eject、投げ返せば reject。subject が「臣民」と「主題」の両方を指すのは、どちらも「下へ置かれたもの」だから。ease と disease（病気）を身内とする説もある。",
