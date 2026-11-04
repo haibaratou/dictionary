@@ -123,7 +123,12 @@
       const dataset=await this.checkDataset();if(!dataset.ok)return {status:'unavailable',reason:dataset.reason,playable:false};
       try {
         let imageURL,imageVerified=false;
-        if(this.location.protocol==='file:' && !hasPack(word)) throw new Error('pack-unavailable');
+        if(this.location.protocol==='file:') {
+          // dictionary copy: saved picture packs are not published, so a locally saved copy shows the WebP file next to the page.
+          const url=this.canonicalURL(word);
+          await new Promise((resolve,reject)=>{const image=new root.Image();image.onload=resolve;image.onerror=()=>reject(new Error('image-unavailable'));image.src=url;});
+          imageURL=url;imageVerified=true;
+        }
         else {
           let bytes;
           if(this.snapshot())bytes=await this.loadPack(word);

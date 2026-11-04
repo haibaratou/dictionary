@@ -68,6 +68,7 @@ etymolingo の `app/pictlingo-game.html`（絵の単語パズル）と `app/pict
 - データ（語・解説・画像の対応）は 2026-10-18 の etymolingo（コミット bc012a4）の `manifest.json`・`illustration-index.js` と、`data.js` が作られたときの `illustration-scenes.json` に合わせた（ゲームの `catalog.js` と辞典の `data.js` がその版から作られているため）。
 - 公開用の写しだけ、次を変えている（目印のコメント「dictionary copy」）。
   - ゲーム `reviewed-scenes.js`: 絵を `.webp` で読み、元 PNG とのハッシュ照合の代わりに WebP であることを確かめる。
+  - 同じく `reviewed-scenes.js`: ZIP などで保存してファイルとして開いたとき（file://）は、保存用の絵のデータ（scene-assets）の代わりに、隣の `assets/word/*.webp` をそのまま表示する。
   - 辞典 `eigo-no-e/app.js`・`shared/illustration-scenes.js`・`pictpedia/pictpedia.js`: 絵を `.webp` で読む。サムネイルは載せず、一覧も同じ絵を使う。
   - `catalog.js`・`data.js`・`illustration-scenes.json` は収録語だけに絞り、`data.js` の枚数などの数を数え直した。意味分類（`semantic-classifications.json`）も収録語の分だけにし、写しの `manifest.json` のそのハッシュを書き換えた。
   - `app/index.html`（ゲーム一覧）はこの写しだけのページ。
