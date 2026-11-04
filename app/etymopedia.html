@@ -518,6 +518,7 @@ section#words{padding:40px 0 50px}
 <script src="shared/explorer-difficulty-v2.js?v=9dc8fbefa448" data-api-only="true"></script>
 <script src="support/etymopedia/current-data.js?v=832cf9a6f1b0"></script>
 <script src="support/etymopedia/character-images.js"></script>
+<script src="support/etymopedia/root-notes.js?v=be0b9fa49961"></script>
 <script src="support/etymopedia/learning-levels.js?v=bd37e1e2c5d0"></script>
 <link rel="stylesheet" href="support/etymopedia/learning-levels.css?v=e43369502e71">
 <script>
@@ -727,6 +728,8 @@ async function loadAll(){
     LEVELS.apply(WORDS,LEXICON,ROOTS,byId);
     window.etymopediaLevels=LEVELS;
   }catch(error){console.warn("Current word data unavailable",error);}
+  /* 語源メモの短い版(support/etymopedia/root-notes.js)。本編のデータは書き換えず、読み込み後に表示だけ差し替えるので再生成で上書きされない */
+  for(const [id,item]of Object.entries(window.ETYMOPEDIA_ROOT_NOTES?.notes||{})){if(ROOTS[id]&&item.note)ROOTS[id].note=item.note;}
   window.etymopediaWord=(word,roots)=>{
     const entry=byId[word];
     if(entry&&JSON.stringify(entry.p||[])===JSON.stringify(roots))return entry;

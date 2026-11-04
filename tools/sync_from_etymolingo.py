@@ -23,6 +23,7 @@ FILES = [
     'app/data/generated-etymon/learning-levels.js',
     'app/support/etymopedia/current-data.js',
     'app/support/etymopedia/character-images.js',
+    'app/support/etymopedia/root-notes.js',
     'app/support/etymopedia/learning-levels.js',
     'app/support/etymopedia/learning-levels.css',
     'assets/word/illustration-index.js',

@@ -30,3 +30,7 @@ git add -A && git commit -m "Sync from etymolingo" && git push
 
 写す画像は、`app/data/*.csv` と `illustration-index.js` から、ページと同じ規則で決める。
 ページが読むファイルを増やしたときは、`tools/sync_from_etymolingo.py` の `FILES` に足すこと。
+
+## 語源メモの短い版
+
+根のページの「語源メモ」は `app/support/etymopedia/root-notes.js` の文を出す。データベース本編（`current-data.js` の解説、`roots.csv` の note）を元に短く書き直したもので、本編とは別ファイルにしてある。ページは本編を読み込んだあとに表示だけを差し替えるので、本編を再生成・同期しても上書きされない。このファイルも etymolingo 側が正本で、同期で写す。
