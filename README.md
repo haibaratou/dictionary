@@ -34,3 +34,14 @@ git add -A && git commit -m "Sync from etymolingo" && git push
 ## 語源メモの短い版
 
 根のページの「語源メモ」は `app/support/etymopedia/root-notes.js` の文を出す。データベース本編（`current-data.js` の解説、`roots.csv` の note）を元に短く書き直したもので、本編とは別ファイルにしてある。ページは本編を読み込んだあとに表示だけを差し替えるので、本編を再生成・同期しても上書きされない。このファイルも etymolingo 側が正本で、同期で写す。
+
+## 漢字（`kanji/`）
+
+`haibaratou/kanji` の字典 `jigen.html` と、漢字パズル `inkanji.html`（ZIZURA）を公開するための写し。
+公開URL: https://haibaratou.github.io/dictionary/kanji/jigen.html
+
+- kanji リポジトリと同じ相対パスを保っている（`assets/…`、`support/…`、`JiaGuWen-master/…`）。
+- 字のページで下の「パズル」を押すと `inkanji.html?kanji=<字>` へ行き、タイトル画面のあと、その字のパズルが始まる（絵のある字だけ。ほかの字では普通のパズル画面）。
+- `jigen.html` の `<meta name="jigen-files">` があると、絵を画像ファイルとして同じフォルダから読む（file:// で開いたときと同じ）。
+- 写しているのは、2つのページと `kanjikobo.html`（創作）が読むスクリプト・フォント・絵（`assets/sumie/` の約1,070枚、甲骨文字の画像）だけ。
+- 正本は `D:/Projects/kanji`。そちらを直したら、同じファイルをここへ写す。
