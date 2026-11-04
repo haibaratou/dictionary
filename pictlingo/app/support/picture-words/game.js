@@ -120,7 +120,13 @@
   const uniqueCount = () => catalog.filter(word => saved.ja.stars[word.id] || saved.en.stars[word.id]).length;
   const bookName = lang => lang === 'ja' ? '日本語' : '英語';
   const nextUncollected = (lang, after) => {
-    const available = catalog.filter(word => supports(word, lang));
+    let available = catalog.filter(word => supports(word, lang));
+    // おまかせ発見はやさしい順: まだ星のない語のうち、いちばん低い独自レベルの、つづりのやさしい10語から選ぶ。
+    // (重みつきの抽選だけだと、語数の多い上のレベルばかり出てしまう)
+    if (saved.targetTier < 0) {
+      const open = available.filter(word => !saved[lang].stars[word.id]);
+      if (open.length) { const lowest = Math.min(...open.map(word => word.tier)); available = open.filter(word => word.tier === lowest).slice(0, 10); }
+    }
     const next = discovery.selectNext(available, saved, { language: lang, targetTier: saved.targetTier, afterId: catalog[after]?.id });
     return available[next] ? catalog.indexOf(available[next]) : -1;
   };
@@ -1237,7 +1243,7 @@
     }
   } else if (catalog.length) {
     const resume=catalog[index];
-    loadLevel(saved[mode].wordId===resume?.id&&supports(resume,mode)&&(saved.targetTier<0||resume.tier===saved.targetTier)?index:nextUncollected(mode,index));
+    loadLevel(saved[mode].wordId===resume?.id&&supports(resume,mode)&&(saved.targetTier<0?resume.tier<=Math.min(...catalog.filter(word=>supports(word,mode)&&!saved[mode].stars[word.id]).map(word=>word.tier)):resume.tier===saved.targetTier)?index:nextUncollected(mode,index));
     const installed = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
     if (effectiveLayout() === 'mobile' && !installed) closePlay();
   }
