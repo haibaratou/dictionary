@@ -34,6 +34,7 @@ git add -A && git commit -m "Sync from etymolingo" && git push
 ## 語源メモの短い版
 
 根のページの「語源メモ」は `app/support/etymopedia/root-notes.js` の文を出す。データベース本編（`current-data.js` の解説、`roots.csv` の note）を元に短く書き直したもので、本編とは別ファイルにしてある。ページは本編を読み込んだあとに表示だけを差し替えるので、本編を再生成・同期しても上書きされない。このファイルも etymolingo 側が正本で、同期で写す。
+ただし「ひとつ」（oino）・「考える」（men）・「与える」（do）には、キャラデザインの核として本編に無い解説を足している（onion と接頭辞 uni-、カマキリ mantis、パンドラと旦那）。足した根には `added` に何を足したかを書いてある。
 
 ## 漢字（`kanji/`）
 
