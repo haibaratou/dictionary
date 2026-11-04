@@ -1,0 +1,18 @@
+/* Keep the shared palette; only this page uses five half-step stars. */
+.etymon-rarity.el-pill{border:0;cursor:pointer;font-family:inherit;line-height:1.2;white-space:nowrap;max-width:100%;padding:4px 9px}
+.el-pill .el-stars{display:inline-flex;gap:1px;flex-wrap:nowrap;font-size:20px;line-height:1;letter-spacing:0}
+.el-pill.er-detail .el-stars{font-size:27px}
+.el-star{display:block;width:1em;text-align:center;flex:0 0 1em}
+.el-half{clip-path:inset(0 50% 0 0);margin-right:-.5em}
+.el-pill:focus-visible{outline:2px solid var(--ink,#302b26);outline-offset:3px}
+.tierBox summary .el-pill{vertical-align:middle}
+#etymopediaDifficultyDialog{width:min(460px,calc(100vw - 32px));max-height:85vh;box-sizing:border-box;overflow:auto;border:1px solid #d0c5b6;border-radius:18px;padding:22px;background:#fffdf7;color:#302b26;box-shadow:0 15px 55px #0003;font-family:inherit}
+#etymopediaDifficultyDialog::backdrop{background:#231b1666}
+#etymopediaDifficultyDialog h2{font-size:22px;margin:0 0 12px;overflow-wrap:anywhere}
+#etymopediaDifficultyDialog p{font-size:14px;line-height:1.7;margin:12px 0}
+#etymopediaDifficultyDialog dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 12px;font-size:14px}
+#etymopediaDifficultyDialog dt{font-weight:700}
+#etymopediaDifficultyDialog dd{margin:0;overflow-wrap:anywhere}
+#etymopediaDifficultyDialog .el-caution{font-size:12px;color:#786c60}
+#etymopediaDifficultyDialog .el-close{display:block;margin:20px 0 0 auto;padding:8px 18px;border:1px solid #bfb1a0;border-radius:999px;background:#fff8e8;color:inherit;font:inherit;cursor:pointer}
+.canonical-hold{display:block;font-size:12px;line-height:1.6;color:#845b32;margin:8px 0}
