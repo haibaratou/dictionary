@@ -1,0 +1,324 @@
+{
+  "schema": 1,
+  "taxonomy": [
+    {
+      "id": "animals",
+      "ja": "動物",
+      "en": "Animals",
+      "subs": [
+        {
+          "id": "wild",
+          "ja": "野生の動物",
+          "en": "Wild animals"
+        },
+        {
+          "id": "sea",
+          "ja": "海・水の生き物",
+          "en": "Sea life"
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "ja": "動き",
+      "en": "Actions",
+      "subs": [
+        {
+          "id": "hand",
+          "ja": "手でする",
+          "en": "With hands"
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "ja": "自然",
+      "en": "Nature",
+      "subs": [
+        {
+          "id": "land",
+          "ja": "山・海・川",
+          "en": "Land & water"
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "ja": "食べ物",
+      "en": "Food",
+      "subs": [
+        {
+          "id": "fruitveg",
+          "ja": "くだもの・野菜",
+          "en": "Fruit & vegetables"
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "ja": "体",
+      "en": "Body",
+      "subs": [
+        {
+          "id": "face",
+          "ja": "顔",
+          "en": "Face"
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "ja": "人・家族",
+      "en": "People & family",
+      "subs": [
+        {
+          "id": "people",
+          "ja": "いろいろな人",
+          "en": "People"
+        }
+      ]
+    },
+    {
+      "id": "society",
+      "ja": "社会・お金",
+      "en": "Society & money",
+      "subs": [
+        {
+          "id": "society",
+          "ja": "社会",
+          "en": "Society"
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "w": "bear",
+      "p": [
+        "bher-1"
+      ],
+      "art": "bear@bher1",
+      "sense": {
+        "index": 0,
+        "ja": "運ぶ",
+        "en": "carry",
+        "sha256": "5bb3ba86fbd758a68ad163ba33f73c92a8a5940ea42073a0bc062d265ded866e"
+      },
+      "categories": [
+        "actions/hand"
+      ],
+      "semanticTags": [
+        "動作",
+        "運ぶ",
+        "carry"
+      ],
+      "distinction": {
+        "ja": "動詞の bear（運ぶ・耐える・産む）。動物の熊とは別語。",
+        "en": "The verb bear: carry, endure, or give birth; distinct from the animal."
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewed_at": "2026-10-05T02:21:25Z",
+        "method": "Exact source identities, full gloss/POS, first-sense digests, current PNG bytes and visible subjects checked against primary dictionary definitions.",
+        "evidence": [
+          "https://www.merriam-webster.com/dictionary/bear",
+          "https://www.merriam-webster.com/dictionary/bruin"
+        ],
+        "note": "Semantic classification and image identity only; does not approve illustration captions or Japanese readings."
+      },
+      "scope": "first_sense",
+      "canonical": {
+        "ja": "運ぶ、耐える、産む",
+        "en": "carry / endure / give birth",
+        "pos": "動"
+      },
+      "artBindingEvidence": {
+        "path": "assets/word/bear@bher1.png",
+        "sha256": "ef3e7e5d23fe698c3b88f2da3512e2d0941b5406a24f925a9362386dcaa2a0ce",
+        "git_blob_sha": "231060afa1cdcd2ca3bd40edb42d5081a70e3774"
+      }
+    },
+    {
+      "w": "key",
+      "p": [
+        "kagh-"
+      ],
+      "art": "key",
+      "sense": {
+        "index": 0,
+        "ja": "小島",
+        "en": "islet",
+        "sha256": "3929e6dcd3436e0aae1c0a54ed5040abcc8c582d55401bb5697d38352bcd9036"
+      },
+      "categories": [
+        "nature/land"
+      ],
+      "semanticTags": [
+        "地形",
+        "小島",
+        "islet"
+      ],
+      "distinction": {
+        "ja": "小島を表す名詞の key。鍵・キーなどを表す同綴語とは区別する。",
+        "en": "The noun key meaning a small island; distinct from the homonyms for a lock key, keyboard key, and other senses."
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewed_at": "2026-10-05T04:53:15.413879Z",
+        "method": "Semantic classification reviewed against primary dictionary definitions, the exact existing source tuple, full Japanese/English gloss and POS, first-sense digest, and the inspected current PNG with matching SHA-256 and Git blob SHA.",
+        "evidence": [
+          "https://www.merriam-webster.com/dictionary/key",
+          "https://www.merriam-webster.com/dictionary/islet"
+        ],
+        "note": "Review covers semantic classification and the existing image identity only; it does not approve or edit the source etymology/root assignment, definitions, Japanese readings, captions, image bytes, or any public runtime."
+      },
+      "scope": "first_sense",
+      "canonical": {
+        "ja": "小島",
+        "en": "islet",
+        "pos": "名"
+      },
+      "artBindingEvidence": {
+        "path": "assets/word/key.png",
+        "sha256": "e2ec74e86334a7244b656be4f09ea19de9074e6ebfcf8721f7c088ae2890b3c5",
+        "git_blob_sha": "26127fad4ab37a96ccbda73a07e466643d1ec583"
+      }
+    },
+    {
+      "w": "rocket",
+      "p": [
+        "ghers-"
+      ],
+      "art": "rocket@ghers",
+      "sense": {
+        "index": 0,
+        "ja": "ルッコラ",
+        "en": "arugula",
+        "sha256": "3ceaeccec68b0038a571a4122468b7d2901ed2973bf299598554578cf25894e1"
+      },
+      "categories": [
+        "food/fruitveg"
+      ],
+      "semanticTags": [
+        "野菜",
+        "ルッコラ",
+        "arugula"
+      ],
+      "distinction": {
+        "ja": "食用の葉野菜の rocket（ルッコラ）。ロケットを指す別語とは区別する。",
+        "en": "The edible leafy plant rocket, or arugula; distinct from the rocket vehicle."
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewed_at": "2026-10-05T05:00:26Z",
+        "method": "Read exact canonical rows, full JA/EN gloss and POS, ordered roots and first-sense digest; visually inspected both paired homonym PNGs; verified actual PNG SHA-256/Git blob identities and primary dictionary sense distinctions.",
+        "evidence": [
+          "https://www.merriam-webster.com/dictionary/rocket",
+          "https://www.merriam-webster.com/dictionary/arugula"
+        ],
+        "note": "Semantic classification and image agreement only. Does not approve captions, Japanese readings, etymological derivation, or any other sense."
+      },
+      "scope": "first_sense",
+      "canonical": {
+        "ja": "ルッコラ",
+        "en": "arugula",
+        "pos": "名"
+      },
+      "artBindingEvidence": {
+        "path": "assets/word/rocket@ghers.png",
+        "sha256": "9a8cc72289eef5f73dd8dc4f0c0ec98ac672da86b45e281ec878649f6ca40ab1",
+        "git_blob_sha": "1ee0b374b86a2d75531ca3df8e6270889e068194"
+      }
+    },
+    {
+      "w": "school",
+      "p": [
+        "(s)kel-1"
+      ],
+      "art": "school@skel1",
+      "sense": {
+        "index": 0,
+        "ja": "魚の群れ",
+        "en": "shoal",
+        "sha256": "efc674adb8336c07c20a459b742a371f0c253585a78fd996143e8aa8ad4e27e6"
+      },
+      "categories": [
+        "animals/sea"
+      ],
+      "semanticTags": [
+        "魚",
+        "魚の群れ",
+        "shoal"
+      ],
+      "distinction": {
+        "ja": "魚の群れを指す school。学校・学派を指す別語とは区別する。",
+        "en": "The noun school meaning a group of fish; distinct from a school for education or a doctrine."
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewed_at": "2026-10-05T05:00:26Z",
+        "method": "Read exact canonical rows, full JA/EN gloss and POS, ordered roots and first-sense digest; visually inspected both paired homonym PNGs; verified actual PNG SHA-256/Git blob identities and primary dictionary sense distinctions.",
+        "evidence": [
+          "https://www.merriam-webster.com/dictionary/school"
+        ],
+        "note": "Semantic classification and image agreement only. Does not approve captions, Japanese readings, etymological derivation, or any other sense."
+      },
+      "scope": "first_sense",
+      "canonical": {
+        "ja": "魚の群れ",
+        "en": "shoal",
+        "pos": "名/動"
+      },
+      "artBindingEvidence": {
+        "path": "assets/word/school@skel1.png",
+        "sha256": "b913ca356cae753716f7ddf30854957a5a2d08e1f3d059fbbe865311209695b0",
+        "git_blob_sha": "42b5ddf2c92ee10c3aac6e1f0b79804e3c3393f4"
+      }
+    },
+    {
+      "w": "temple",
+      "p": [
+        "temp-"
+      ],
+      "art": "temple@temp",
+      "sense": {
+        "index": 0,
+        "ja": "こめかみ",
+        "en": "side of forehead",
+        "sha256": "57670bec87c810feb150fc1167479bf0049cb58b922b70b05c0d7eb2b2a31e30"
+      },
+      "categories": [
+        "body/face"
+      ],
+      "semanticTags": [
+        "体の部位",
+        "こめかみ",
+        "side of forehead"
+      ],
+      "distinction": {
+        "ja": "頭の左右にあるこめかみを指す temple。寺院を指す別語とは区別する。",
+        "en": "The temple at the side of the forehead; distinct from a temple building."
+      },
+      "review": {
+        "status": "reviewed",
+        "reviewed_at": "2026-10-05T05:00:26Z",
+        "method": "Read exact canonical rows, full JA/EN gloss and POS, ordered roots and first-sense digest; visually inspected both paired homonym PNGs; verified actual PNG SHA-256/Git blob identities and primary dictionary sense distinctions.",
+        "evidence": [
+          "https://www.merriam-webster.com/dictionary/temple"
+        ],
+        "note": "Semantic classification and image agreement only. Does not approve captions, Japanese readings, etymological derivation, or any other sense."
+      },
+      "scope": "first_sense",
+      "canonical": {
+        "ja": "こめかみ",
+        "en": "side of forehead",
+        "pos": "名"
+      },
+      "artBindingEvidence": {
+        "path": "assets/word/temple@temp.png",
+        "sha256": "ecfd2fac8987dc131db81062327eb8e971bb967aeab84f7fe3a722df2bc09b95",
+        "git_blob_sha": "46c8ae1ee7bd30487ce0dd4fef6e6b4ea08cd5d6"
+      }
+    }
+  ]
+}

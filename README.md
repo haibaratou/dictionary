@@ -45,3 +45,30 @@ git add -A && git commit -m "Sync from etymolingo" && git push
 - `jigen.html` の `<meta name="jigen-files">` があると、絵を画像ファイルとして同じフォルダから読む（file:// で開いたときと同じ）。
 - 写しているのは、2つのページと `kanjikobo.html`（創作）が読むスクリプト・フォント・絵（`assets/sumie/` の約1,070枚、甲骨文字の画像）だけ。
 - 正本は `D:/Projects/kanji`。そちらを直したら、同じファイルをここへ写す。
+
+## Pictlingo（`pictlingo/`）
+
+etymolingo の `app/pictlingo-game.html`（絵の単語パズル）と `app/pictlingo-dictionary.html`（英単語のイラスト辞典）の公開用の写し。
+
+- ゲーム: https://haibaratou.github.io/dictionary/pictlingo/app/pictlingo-game.html
+- 辞典: https://haibaratou.github.io/dictionary/pictlingo/app/pictlingo-dictionary.html
+
+`pictlingo/` の中は etymolingo と同じ相対パス（`app/…`、`assets/…`）。etymopedia の `assets/word/` とは別にしてある（使う `illustration-index.js` の版が違うため）。
+
+### 収録する語（9,000語）
+
+- 辞典データ（`eigo-no-e/data.js`）のうち、絵の英文・日本語の解説がそろっている（`description.status` が `reviewed`）語だけ。
+- やさしい順に並べて、英単語の綴りが 9,000 種類になるところまで（9,067項目・9,067枚）。
+- やさしさは独自学習レベル（`custom-learning-levels.js`）。レベルが付いていない語は、同じデータの `auxiliaryR` をレベルの区切り（`unlistedCutPoints`）に当てはめた推定レベルで並べた。同じレベルの中は `r` の小さい順。
+- ゲームの問題はこの 9,000 語の中で、ゲームの学習選定を通る語だけ（約4,150問）。
+
+### 本体との違い
+
+- 絵は PNG（1枚 約220KB）だと 9,000 枚で約2GB になり、GitHub Pages の上限（1サイト1GB）を超えるので、同じ 512px の WebP（品質80、1枚 約40KB）に変換した。ファイル名は `.png` → `.webp`。
+- データ（語・解説・画像の対応）は 2026-10-18 の etymolingo（コミット bc012a4）の `manifest.json`・`illustration-index.js` と、`data.js` が作られたときの `illustration-scenes.json` に合わせた（ゲームの `catalog.js` と辞典の `data.js` がその版から作られているため）。
+- 公開用の写しだけ、次を変えている（目印のコメント「dictionary copy」）。
+  - ゲーム `reviewed-scenes.js`: 絵を `.webp` で読み、元 PNG とのハッシュ照合の代わりに WebP であることを確かめる。
+  - 辞典 `eigo-no-e/app.js`・`shared/illustration-scenes.js`・`pictpedia/pictpedia.js`: 絵を `.webp` で読む。サムネイルは載せず、一覧も同じ絵を使う。
+  - `catalog.js`・`data.js`・`illustration-scenes.json` は収録語だけに絞り、`data.js` の枚数などの数を数え直した。意味分類（`semantic-classifications.json`）も収録語の分だけにし、写しの `manifest.json` のそのハッシュを書き換えた。
+  - `app/index.html`（ゲーム一覧）はこの写しだけのページ。
+- 「圏外でも遊べるように保存」は、保存用の絵のデータ（scene-assets）を載せていないので使えない。

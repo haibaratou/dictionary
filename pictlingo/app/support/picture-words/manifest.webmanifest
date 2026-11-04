@@ -1,0 +1,10 @@
+{
+  "name": "Pictlingo Game",
+  "short_name": "Pictlingo Game",
+  "start_url": "../../pictlingo-game.html",
+  "scope": "../../",
+  "display": "standalone",
+  "background_color": "#fff4dc",
+  "theme_color": "#fff4dc",
+  "lang": "ja"
+}

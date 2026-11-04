@@ -1,0 +1,28 @@
+/* Etymopedia's pill palette and slow gradient motion, adapted to small surfaces. */
+.er-surface{--er-bg:#8fa39a;--er-ink:#fff;background:var(--er-bg)!important;color:var(--er-ink)!important;border-color:transparent!important;isolation:isolate}
+.er-t0{--er-bg:#e7e7e2;--er-ink:#5c625e}
+.er-t1{--er-bg:#8fa39a}.er-t2{--er-bg:#3ecfa5}.er-t3{--er-bg:#4aa8ff}.er-t4{--er-bg:#9a6ee0}
+.er-t5{--er-bg:linear-gradient(115deg,#7b5cd6,#b06ee0,#e070c8,#8f7bef,#7b5cd6);--er-ink:#fff;background-size:300% 100%!important;text-shadow:0 1px 2px rgba(36,31,38,.35)}
+.er-t6{--er-bg:linear-gradient(100deg,#ff5470,#ffb03e,#ffd23e,#3ecfa5,#4aa8ff,#9a6ee0,#ff5470);--er-ink:#fff;background-size:400% 100%!important;text-shadow:0 1px 2px rgba(36,31,38,.4)}
+.er-t7{--er-bg:linear-gradient(100deg,#241f26,#6b4f1d,#241f26);--er-ink:#ffe9a8;background-size:300% 100%!important;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.etymon-rarity{display:inline-flex;align-items:center;gap:6px;max-width:100%;box-sizing:border-box;padding:2px 11px;border-radius:999px;font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;font-size:12px;font-weight:900;line-height:normal;letter-spacing:.4px;vertical-align:middle;white-space:nowrap}
+.etymon-rarity .er-stars{letter-spacing:1.5px;flex-shrink:0}.etymon-rarity .er-label{min-width:0;flex-shrink:0;background:none;padding:0;color:inherit}
+.er-list{animation:none!important}
+.etymon-rarity.er-list{flex-wrap:wrap;justify-content:center;row-gap:0}
+.etymon-rarity.er-detail{font-size:15px;padding:4px 16px}
+.er-detail.er-t5,.er-game.er-t5{animation:etymonRarityFlow 9s linear infinite}
+.er-detail.er-t6,.er-game.er-t6{animation:etymonRarityFlow 7s linear infinite}
+.er-detail.er-t7,.er-game.er-t7{animation:etymonRarityFlow 6s linear infinite}
+.word-rarity{margin:8px 0 12px}.tile .cap .etymon-rarity{margin-top:5px}.rarity-raw{display:inline-block;margin-left:5px;font-size:11px;color:#665e51}
+.art-stars.er-surface{padding:3px 8px!important;border-radius:999px}.art-stars.er-surface img{filter:drop-shadow(0 1px 1px #34273477)}
+#rewardStars.er-surface{border-radius:999px;padding:5px 12px;max-width:max-content;margin:8px auto!important;flex-wrap:nowrap}
+#dexTabs button.er-surface{outline-offset:2px}#dexTabs button.er-surface.on{outline:2px solid #241f26}
+@keyframes etymonRarityFlow{to{background-position:400% 0}}
+@media(prefers-reduced-motion:reduce){.er-surface,.er-surface::before,.er-surface::after{animation:none!important;transition:none!important}}
+@media(forced-colors:active){.er-surface{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText!important}.er-label{background:Canvas!important;color:CanvasText!important}}
+
+/* Current custom level is the exact visible star count (1–10). */
+.etymon-rarity.custom-level{max-width:100%;padding:4px 8px;white-space:normal;line-height:1.15}
+.custom-level .er-stars{display:flex;flex-wrap:wrap;justify-content:center;gap:0;max-width:100%;font-size:28px;line-height:1.15;letter-spacing:0}
+.custom-level .er-star{display:block;flex:0 0 1em;text-align:center}
+.custom-level .er-label:empty{display:none}

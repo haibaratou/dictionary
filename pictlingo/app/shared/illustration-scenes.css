@@ -1,0 +1,7 @@
+.illustration-explanation{font-size:14px;line-height:1.55;text-align:left;overflow-wrap:anywhere}.illustration-explanation p{margin:5px 0}.illustration-explanation p[lang=en]{color:#294236;font-weight:650}.illustration-explanation p[lang=ja]{color:#645b50}.illustration-explanation-label{font-size:11px;font-weight:750;letter-spacing:.05em;color:#726951}.illustration-explanation-status{color:#807666;font-weight:400}.reward-explanation{max-width:440px;margin:10px auto;padding:12px 16px;border-radius:16px;background:#fffaf0;border:1px solid #dfd5c2;flex-shrink:0}.reward-explanation[hidden]{display:none}.cScene{min-width:240px;max-width:340px}.cScene .illustration-explanation{font-size:12px}.detText .illustration-explanation{box-sizing:border-box;max-width:calc(100vw - 32px);padding:12px;background:#fff8e9;border-radius:12px;margin-bottom:12px}
+/* A separate scrolling content region leaves the single Next action in normal flow. */
+#rewardScene{display:flex;flex-direction:column;max-height:calc(100dvh - 30px);overflow:visible;padding-bottom:18px}
+#rewardScroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:clip;padding:0 3px 12px;scroll-padding-block-end:14px;scrollbar-width:thin}
+#rewardScroll:focus-visible{outline:2px solid #746aa5;outline-offset:2px;border-radius:18px}
+#rewardScene .advance-label{position:static;flex:0 0 auto;min-height:44px;margin-top:12px;background:#fffaf0;border:1px solid #d7c9b4;box-shadow:0 3px 0 #c6b294}
+#rewardScene .advance-label:focus-visible{outline:3px solid #4f4a9c;outline-offset:3px}

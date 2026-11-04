@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "source": "etymon-source/app/data/pie (generated runtime snapshot)",
+  "files": {
+    "roots": {
+      "file": "roots.json",
+      "bytes": 1033224,
+      "count": 1436,
+      "sha256": "b9147f4644de8ca168675c71c7dda68179e995736411db8e236bf85589870e7b"
+    },
+    "words": {
+      "file": "words.json",
+      "bytes": 23023403,
+      "count": 49168,
+      "sha256": "305562a11a2516f4265c86a652173386a85533e045302bc5c58aeb4de60b6040"
+    },
+    "affixes": {
+      "file": "affixes.json",
+      "bytes": 257191,
+      "count": 888,
+      "sha256": "243da94e9b367b0c6a00ac1b3148e5f59f35d02c7713df6747152935ca9d90f2"
+    },
+    "word_block": {
+      "file": "word_block.json",
+      "bytes": 842688,
+      "count": 9,
+      "sha256": "927a778c8c0240eb10c6e0de01172f4dcba2d6344b1d1eaff9170c8fcdff9539"
+    },
+    "details_brief": {
+      "file": "details_brief.json",
+      "bytes": 147505,
+      "count": 49168,
+      "sha256": "8d53d34db151acfb67776b835193cc08379eb3c39774c17f76b077570f32c62c"
+    },
+    "eo_slugs": {
+      "file": "eo_slugs.json",
+      "bytes": 520338,
+      "count": 47363,
+      "sha256": "bea8d96709efe8bae910522a366314b2341b6705e1e7e0ffa54abcc1e49214a7"
+    },
+    "word_parts": {
+      "file": "word-parts.json",
+      "bytes": 413033,
+      "count": 4800,
+      "sha256": "e311b008cdb94c9af96b41c8ed397e5afcef8e0497133d46e093218d6bae217e",
+      "meaning_basis": "word-formation-v1"
+    },
+    "illustration_scenes": {
+      "file": "illustration-scenes.json",
+      "bytes": 13354773,
+      "count": 10590,
+      "sha256": "730ec1407aae3ac374c860e59f308ac505c5dca1166a121071d8db86d803fc52"
+    },
+    "word_suika_words": {
+      "file": "word-suika-words.json",
+      "bytes": 3517582,
+      "count": 14688,
+      "sha256": "cb85e70fe89f2ff9947db5de8e2b4560d708fb0c5b76aded25070e100fac47b7"
+    },
+    "det": {
+      "file": "det/*.json",
+      "bytes": 42769574,
+      "count": 27
+    },
+    "eo": {
+      "file": "eo/*.json",
+      "bytes": 21243040,
+      "count": 27
+    },
+    "semantic_classifications": {
+      "file": "semantic-classifications.json",
+      "bytes": 10099,
+      "count": 5,
+      "sha256": "53e1df19c719282ddc9313f012fe9d6ec82c804209049fda853a9ce7bb714861"
+    },
+    "multilingual_answers": {
+      "file": "multilingual-answers.json",
+      "bytes": 1885,
+      "count": 1,
+      "sha256": "608e94c0ed0e38f1b898bff2e50246c0dc32b67837e988cc53918397d8493358"
+    },
+    "offline_dictionary": {
+      "file": "offline-dictionary.js",
+      "parts": [
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-00.js",
+          "bytes": 3145912,
+          "sha256": "3c375e2b9be00b0217ff5adaeab2f56a216119668d29766485ea096867dce8e7"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-01.js",
+          "bytes": 3145912,
+          "sha256": "51e1ec8f5289b31103b36c57ab506801b5b4d742b1ac37fb842d7e0ac19fd34a"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-02.js",
+          "bytes": 3145912,
+          "sha256": "b7e6dcbfc4efeb0b6f2d1ce9189cc72bd0e7f5e345895202b6b28287f096aebd"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-03.js",
+          "bytes": 3145912,
+          "sha256": "4ff48ac26a2ee1e791f3fc6237b7a20398c5f6a572e4e1039f4ba73ce58fb435"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-04.js",
+          "bytes": 3145912,
+          "sha256": "d990589d6ce04544df72a42d83dea1b9efe5358c7f360e6a1bf8a953b91aa758"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-05.js",
+          "bytes": 3145912,
+          "sha256": "9507e6da4045fc7bb5bc4fbab967f8d3db89ce516363e5f572f99429083c5341"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-06.js",
+          "bytes": 3145912,
+          "sha256": "785e3a04968f0b98752732e1f143a526772baa42d6e59d37e6a78d301adc35a8"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-07.js",
+          "bytes": 3145912,
+          "sha256": "745464d51b618738b0180ecddd6ce8ad1b25e4200a0b7dee452d7e6a2a9a4dd2"
+        },
+        {
+          "file": "offline-dictionary-part-f8bc8a60f3a8-08.js",
+          "bytes": 2659092,
+          "sha256": "f68f425484f5c1a11f11f3acf87e3386d7e6e6bee27ad5af17c35939c98db755"
+        },
+        {
+          "file": "offline-dictionary.js",
+          "bytes": 1380,
+          "sha256": "85e42046b5f87c1b2be3af97f49f1aea6095319c052c8586ab1b319e854ff29b"
+        }
+      ],
+      "source_commit": "2b063f04276e9a7f579bd4114dbcfa87b50f329b",
+      "words_sha256": "cac138d975055f1654e052944c0b5ce89e7ea9212f0c350567583b38224e7125"
+    },
+    "eo_pick": {
+      "file": "eo_pick.json",
+      "bytes": 7679,
+      "count": 237,
+      "sha256": "041c0f8dcb90532eea70dca566294ede379741a201935eb43ab885d7df075543"
+    }
+  }
+}

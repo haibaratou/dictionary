@@ -1,0 +1,207 @@
+/* Pictpedia の見た目(eigo-no-e/style.css の上に重ねる)
+   ロゴの5色と、ふたりのキャラクターを主役にする。 */
+:root{
+  --bg:#fffaf0;
+  --bg-2:#fff3dc;
+  --card:#ffffff;
+  --ink:#3a2618;          /* キャラの線の焦げ茶 */
+  --ink-2:#7a6150;
+  --ink-3:#b09a86;
+  --line:#f1e4cf;
+  --accent:#fd7155;       /* ロゴの赤 */
+  --accent-ink:#e0523a;
+  --accent-soft:#ffe6dd;
+  --p-blue:#2eaaf7;
+  --p-red:#fd7155;
+  --p-yellow:#fec514;
+  --p-green:#5cc45a;
+  --p-teal:#2cbfba;
+  --radius:22px;
+  --shadow:0 2px 0 rgba(58,38,24,.08),0 8px 20px -10px rgba(58,38,24,.25);
+  --shadow-2:0 3px 0 rgba(58,38,24,.08),0 20px 36px -16px rgba(58,38,24,.4);
+  --jp:"M PLUS Rounded 1c","Zen Maru Gothic",system-ui,sans-serif;
+  --en:"Fredoka","M PLUS Rounded 1c",system-ui,sans-serif;
+}
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 18%,rgba(46,170,247,.08) 0 120px,transparent 121px),
+    radial-gradient(circle at 88% 8%,rgba(254,197,20,.12) 0 160px,transparent 161px),
+    radial-gradient(circle at 92% 70%,rgba(44,191,186,.08) 0 140px,transparent 141px);
+  background-attachment:fixed;
+}
+
+/* ───────── header ───────── */
+.bar{background:color-mix(in srgb,#fff 88%,transparent);border-bottom:2px solid var(--line)}
+.logo-mark{display:none!important}
+.logo-type{display:block!important}
+.pp-logo{display:block;height:46px;width:auto;transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.logo:hover .pp-logo{transform:rotate(-3deg) scale(1.05)}
+.search{height:50px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:0 4px 0 var(--ink);background:#fff}
+.search:focus-within{box-shadow:0 6px 0 var(--ink);transform:translateY(-2px);border-color:var(--ink)}
+.mode{border-right:2px solid var(--line);padding:5px}
+.mode button{border-radius:999px;font-weight:800}
+.mode button[aria-selected="true"]{background:var(--p-blue);color:#fff}
+.search .go{color:var(--ink)}
+.search .go:hover{color:var(--accent)}
+@media (max-width:620px){.pp-logo{height:38px}}
+
+/* ───────── 共通の部品 ───────── */
+.h1{font-weight:900}
+.h2{font-weight:900;font-size:22px;align-items:center}
+.h2 small{font:600 14px var(--en);color:var(--ink-3)}
+.h2 a{font-weight:800;color:var(--accent-ink)}
+.pp-peek{height:84px;width:auto;margin:-24px 0 -10px -4px;flex:none;animation:pp-bob 3.2s ease-in-out infinite}
+.pp-peek.flip{transform-origin:center}
+@keyframes pp-bob{50%{translate:0 -5px}}
+@keyframes pp-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes pp-wiggle{25%{rotate:-4deg}75%{rotate:4deg}}
+
+/* tile */
+.tile{border:2px solid var(--line);border-radius:var(--radius);box-shadow:0 3px 0 var(--line);transition:transform .25s cubic-bezier(.3,1.6,.5,1),box-shadow .2s,border-color .2s}
+.tile:hover{transform:translateY(-5px) rotate(-1deg);border-color:var(--ink);box-shadow:0 6px 0 var(--ink)}
+.tile:hover .pic img{animation:pp-wiggle .5s ease-in-out;transform:scale(1.06)}
+.tile .pic{background:#fff}
+.tile .cap{border-top:2px dashed var(--line);padding:9px 13px 12px}
+.tile .w{font:600 18px/1.2 var(--en)}
+.tile .j{font-weight:700}
+.grid .tile{animation:pp-pop .45s cubic-bezier(.3,1.6,.5,1) both}
+.grid .tile:nth-child(6n+2){animation-delay:.04s}.grid .tile:nth-child(6n+3){animation-delay:.08s}
+.grid .tile:nth-child(6n+4){animation-delay:.12s}.grid .tile:nth-child(6n+5){animation-delay:.16s}.grid .tile:nth-child(6n){animation-delay:.2s}
+
+.btn{border:2px solid var(--ink);border-radius:999px;font-weight:800;box-shadow:0 3px 0 var(--ink);transition:transform .1s,box-shadow .1s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.btn:disabled{box-shadow:none;transform:none}
+.btn.primary{background:var(--accent);border-color:var(--ink);color:#fff}
+.btn.primary:hover{background:var(--accent-ink)}
+.subnav a,.tryline a,.tags a{border:2px solid var(--line);border-radius:999px;font-weight:800}
+.subnav a.on{background:var(--p-blue);border-color:var(--p-blue)}
+.box{border:2px solid var(--line);border-radius:20px}
+.box h3{color:var(--p-teal)}
+
+/* ───────── トップ ───────── */
+.pict-hero{display:block;background:none;border:0;border-radius:36px;overflow:visible;margin:4px auto 0;max-width:960px}
+.pict-hero .hero-art{display:block;width:100%;height:auto;border-radius:36px;border:3px solid var(--ink);box-shadow:0 8px 0 var(--ink)}
+.pp-panel{position:relative;z-index:2;max-width:880px;margin:-56px auto 8px;padding:26px 30px 22px 210px;background:#fff;border:3px solid var(--ink);border-radius:32px;box-shadow:0 7px 0 var(--ink)}
+.pp-panel .pp-pair{position:absolute;left:14px;bottom:8px;width:190px;height:auto;animation:pp-bob 3s ease-in-out infinite}
+.pp-panel h2{margin:0 0 4px;font:900 clamp(22px,2.6vw,30px)/1.35 var(--jp)}
+.pp-panel h2 span{color:var(--accent)}
+.pp-panel p{margin:0 0 14px;color:var(--ink-2);font-weight:700;font-size:14px}
+.pp-panel p b{font:600 1.25em var(--en);color:var(--p-blue)}
+.pp-panel .tryline{margin:12px 0 0}
+@media (max-width:760px){
+  .pp-panel{margin-top:74px;padding:84px 18px 18px;border-radius:26px}
+  .pp-panel .pp-pair{left:50%;top:-58px;bottom:auto;width:150px;margin-left:-75px}
+  .pict-hero .hero-art{border-radius:24px}
+}
+
+.cats{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.cat{--c:var(--p-blue);grid-template-columns:1fr;justify-items:center;text-align:center;padding:16px 14px 18px;border:2px solid color-mix(in srgb,var(--c) 45%,#fff);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:26px;box-shadow:0 4px 0 color-mix(in srgb,var(--c) 45%,#fff);transition:transform .25s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
+.cat:nth-child(5n+2){--c:var(--p-red)}.cat:nth-child(5n+3){--c:var(--p-yellow)}.cat:nth-child(5n+4){--c:var(--p-green)}.cat:nth-child(5n+5){--c:var(--p-teal)}
+.cat:hover{transform:translateY(-6px) rotate(-1.5deg);box-shadow:0 8px 0 color-mix(in srgb,var(--c) 60%,#fff);border-color:color-mix(in srgb,var(--c) 70%,#fff)}
+.cat .ic{width:112px;height:112px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--c) 35%,#fff)}
+.cat .ic img{padding:12px}
+.cat h3{font:900 17px/1.3 var(--jp)}
+.cat h3 small{font:600 12px var(--en);color:color-mix(in srgb,var(--c) 70%,var(--ink))}
+.cat:focus-within{border-color:var(--ink)}
+
+/* ───────── 状態 ───────── */
+.pp-state{display:flex;justify-content:center;margin:0 auto 10px}
+.pp-state img{height:150px;width:auto;animation:pp-pop .5s cubic-bezier(.3,1.6,.5,1) both}
+.empty b{font-size:22px}
+.h1:has(.pp-joy){display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
+.pp-joy{height:64px;width:auto;vertical-align:middle;margin:-12px 0 -8px 10px;animation:pp-pop .5s cubic-bezier(.3,1.6,.5,1) both}
+
+/* 単語ページ */
+.plate{border:3px solid var(--ink);border-radius:32px;box-shadow:0 7px 0 var(--ink);background:#fff radial-gradient(circle,rgba(254,197,20,.14) 0 60%,transparent 61%)}
+.word-title{font:600 clamp(52px,7vw,90px)/1 var(--en);letter-spacing:-.01em}
+.pos{background:var(--p-teal);color:#fff;border-radius:999px;font-weight:800}
+
+/* footer */
+.foot{background:#fff3dc;border-top:3px solid var(--ink);position:relative;margin-top:140px}
+.pp-foot-run{position:absolute;left:0;right:0;top:-140px;height:140px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:0;overflow:visible;padding:0;pointer-events:none}
+.pp-foot-crowd{display:flex;align-items:flex-end;gap:0;min-width:0;overflow:hidden}
+.pp-foot-left{justify-content:flex-end}
+.pp-foot-right{justify-content:flex-start}
+.pp-foot-word{display:block;flex:1 1 0;width:0;min-width:0;height:116px;object-fit:contain;animation:none!important}
+.pp-foot-meet{display:flex;align-items:flex-end;gap:0;z-index:1;flex:none;position:relative}
+.pp-foot-run img.pp-foot-mascot{display:block;height:116px;width:auto;flex:none;object-fit:contain;animation:none!important;transform:none!important;translate:none!important}
+.pp-foot-run img.pp-foot-mascot+img.pp-foot-mascot{margin-left:-8px}
+.pp-foot-meet:before{content:"";position:absolute;inset:0 8px 8px;z-index:-1;background:radial-gradient(ellipse at center bottom,rgba(255,255,255,.92) 0 48%,rgba(255,255,255,0) 78%)}
+@media(max-width:620px){.foot{margin-top:114px}.pp-foot-run{top:-114px;height:114px}.pp-foot-word{height:98px}.pp-foot-run img.pp-foot-mascot{height:98px}.pp-foot-run img.pp-foot-mascot+img.pp-foot-mascot{margin-left:-6px}}
+.foot .pp-foot-logo{display:block;margin-bottom:6px;font:700 24px/1.4 var(--en)}
+
+@media (prefers-reduced-motion:reduce){.pp-peek,.pp-panel .pp-pair,.pp-foot-run img,.grid .tile{animation:none!important}}
+
+/* ───────── パズル（Pictlingo）への入口 ───────── */
+.pp-play{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:center;max-width:none;margin:44px 0 10px;padding:28px 32px;background:linear-gradient(135deg,#e8f6ff 0%,#fff6dd 100%);border:3px solid var(--ink);border-radius:32px;box-shadow:0 7px 0 var(--ink)}
+.pp-kicker{display:inline-block;font:800 13px var(--jp);color:#fff;background:var(--p-blue);padding:4px 14px;border-radius:999px}
+.pp-kicker b{font:600 1.1em var(--en)}
+.pp-play h2{margin:10px 0 4px;font:900 clamp(24px,3vw,34px)/1.3 var(--jp)}
+.pp-play h2 span{color:var(--p-blue)}
+.pp-play p{margin:0 0 16px;color:var(--ink-2);font-weight:700}
+.pp-today{display:flex;align-items:center;gap:18px;background:#fff;border:2.5px solid var(--ink);border-radius:24px;padding:14px 18px;box-shadow:0 4px 0 var(--ink)}
+.pp-today-pic{position:relative;flex:none;width:112px;height:112px;border-radius:18px;background:#fff8e6}
+.pp-today-pic img{width:100%;height:100%;object-fit:contain;padding:6px}
+.pp-today-pic span{position:absolute;right:-8px;top:-10px;width:36px;height:36px;border-radius:50%;background:var(--p-red);color:#fff;display:grid;place-items:center;font:700 22px var(--en);border:2.5px solid var(--ink)}
+.pp-today-body small{display:block;font:800 12px var(--jp);color:var(--p-teal)}
+.pp-today-body b{display:block;font:900 19px/1.4 var(--jp);margin:2px 0 10px}
+.pp-today-go{display:flex;flex-wrap:wrap;gap:10px}
+.pp-today-go .btn{height:44px}
+.pp-play-main{height:54px;font-size:18px}
+.pp-steps{list-style:none;margin:18px 0 6px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pp-steps li{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center;background:rgba(255,255,255,.7);border-radius:16px;padding:8px 12px}
+.pp-steps i{grid-row:span 2;font:700 22px var(--en);color:#fff;background:var(--p-yellow);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-style:normal;border:2px solid var(--ink)}
+.pp-steps li:nth-child(2) i{background:var(--p-blue)}.pp-steps li:nth-child(3) i{background:var(--p-red)}
+.pp-steps b{font:900 15px var(--jp)}
+.pp-steps span{font:700 12px var(--jp);color:var(--ink-2)}
+.pp-mobile-tip{display:none;margin:8px 0 0!important;font-size:13px}
+.pp-phone{position:relative;display:block;justify-self:end;width:240px;border-radius:38px;background:var(--ink);padding:10px;box-shadow:0 10px 0 rgba(58,38,24,.22);transform:rotate(3deg);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.pp-phone:hover{transform:rotate(0) translateY(-4px)}
+.pp-phone img:first-child{display:block;width:100%;height:auto;border-radius:30px}
+.pp-phone .pp-phone-girl{position:absolute;left:-92px;bottom:-14px;height:150px;width:auto;transform:scaleX(1) rotate(-3deg);animation:pp-bob 3s ease-in-out infinite}
+@media (max-width:820px){
+  .pp-play{grid-template-columns:1fr;padding:22px 18px;margin-top:26px}
+  .pp-phone{display:none}
+  .pp-steps{grid-template-columns:1fr}
+  .pp-mobile-tip{display:block}
+  .pp-today{flex-direction:column;text-align:center}
+  .pp-today-go{justify-content:center}
+}
+
+/* ピックアップは1列だけ（パソコン6枚・スマホ4枚） */
+#pick .grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+#pick .grid .tile:nth-child(n+7){display:none}
+#pick .load-more{display:none}
+@media (max-width:820px){
+  #pick .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #pick .grid .tile:nth-child(n+5){display:none}
+}
+@media (max-width:520px){
+  #pick .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+
+
+/* Compact dictionary detail: one pronunciation control, grouped inline senses. */
+.word{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(20px,3.5vw,44px);margin:0}
+.word-heading{display:flex;align-items:center;gap:14px}
+.word-heading .word-title{font-size:clamp(34px,4.5vw,60px);margin:0;min-width:0;overflow-wrap:anywhere}
+.word-speak{display:inline-grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:var(--p-teal);color:white;cursor:pointer}
+.word-speak svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2}
+.word-speak:hover{filter:brightness(.9)}.word-speak:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.word .phonetics{margin:10px 0 14px;font-size:18px}
+.word .word-ja{margin:0 0 18px;font-size:25px}
+
+.dictionary-meanings{margin:16px 0 22px;font-size:17px;line-height:1.9}
+.meaning-group{margin:8px 0}.meaning-group .pos{vertical-align:middle;margin-right:8px;font-size:12px}
+.meaning-text{display:inline}.meaning-group .sense-usage{display:inline;font-size:13px;color:var(--ink-2)}
+.word .word-sources{border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 0;background:transparent;margin:0}
+.word-categories{padding-top:12px}.word-categories .tags a{font-size:12px;padding:4px 10px}
+.scene-description{margin-top:22px;font-size:15px;line-height:1.7}.scene-description:empty{display:none}
+.scene-description .en{font-size:17px;line-height:1.6}
+@media(max-width:1000px){.word{grid-template-columns:1fr;gap:24px}.word-art{max-width:520px;width:100%;margin:0 auto}.word-info{min-width:0}.word-heading .word-title{font-size:42px}.dictionary-meanings{font-size:16px}.word .word-ja{font-size:23px}}
+
+.word-info .scene-description{margin:18px 0;padding:18px 20px;border:2px solid var(--line);border-radius:20px;background:var(--card)}
+.word-info .scene-description:empty{display:none}
