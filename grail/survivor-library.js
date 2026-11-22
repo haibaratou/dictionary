@@ -83,7 +83,7 @@
     imageChecks.set(url,promise); return promise;
   }
   function fallback(entry) {
-    const key=entry.kind==='divine'?'divine':entry.kind==='phantom'?'phantom':Object.hasOwn(roles,entry.role)?entry.role:'explorer';
+    const key=entry.kind==='divine'?(entry.strength>=96?'divine':'deity'):entry.kind==='phantom'?'phantom':Object.hasOwn(roles,entry.role)?entry.role:'explorer';
     return 'archetypes/'+key+'.webp';
   }
   async function display(entry) {
