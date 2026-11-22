@@ -166,7 +166,7 @@
     return entries.map(entry=>({entry,score:-Math.log(Math.max(Number.EPSILON,Math.random()))/(odds[entry.rarity]||1)}))
       .sort((a,b)=>a.score-b.score).map(x=>x.entry);
   }
-  async function draw(count=10) {
+  async function draw(count=10,{frontier=false}={}) {
     const total=Math.max(1,Math.min(10,count));
     const refresh=discover();
     if (verified.size<total) await Promise.race([refresh,nap(6000)]);
@@ -179,6 +179,15 @@
     }
     if (Math.random()<1-Math.pow(.992,total)) take(h=>h.kind==='divine');
     if (Math.random()<1-Math.pow(.965,total)) take(h=>h.kind==='phantom');
+    if(frontier && window.SurvivalFrontTales?.hasNamed){
+      const distinctRoles=new Set();
+      for(let i=0;i<Math.floor(total*.2);i++){
+        const previousSize=picked.length;
+        take(h=>h.kind==='human'&&!distinctRoles.has(h.role)&&window.SurvivalFrontTales.hasNamed(h));
+        if(previousSize===picked.length)break;
+        distinctRoles.add(picked[picked.length-1].role);
+      }
+    }
     const pictured=h=>Boolean(h.localImage || window.SurvivalIllustrated?.has(h.name));
     // These slots are drawn across professions and use different identified people,
     // including in a browser with no connection to Wikimedia.

@@ -909,6 +909,12 @@ textarea {
 .summoned-person {width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(1px 4px 3px #2c1f131f);}
 .draft-voice {font:500 13px/1.65 var(--serif);margin:3px 0 10px;overflow-wrap:anywhere;}
 .draft-voice:empty {display:none;}
+.draft-talent {margin:4px 0 10px;color:#172d34;font:700 14px/1.4 var(--sans);overflow-wrap:anywhere;}
+.draft-talent small {display:block;margin-bottom:3px;color:#685231;font:600 10px/1.4 var(--sans);}
+.draft-project {display:block;margin-top:3px;font:500 12px/1.45 var(--sans);}
+.draft-bio {margin-top:6px;font-size:12px;line-height:1.5;}
+.draft-bio summary {color:#485458;cursor:pointer;}
+.draft-bio .sources {display:block;overflow-wrap:anywhere;}
 .summon-art-window {width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;position:relative;display:grid;place-items:center;}
 .summon-art-window img {width:100%;height:100%;object-fit:contain;}
 .living-scene {display:grid;grid-template-columns:minmax(110px,23%) minmax(0,1fr);margin:22px 0 12px;border:1px solid #b1a38a;background:#fcf8ed;box-shadow:0 4px 20px #2530350f;}

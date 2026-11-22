@@ -1,9 +1,13 @@
 (() => {
   'use strict';
-  const $=id=>document.getElementById(id), engine=window.SurvivalEngine;
+  const $=id=>document.getElementById(id), engine=window.SurvivalEngine, frontier=window.SurvivalFrontier, field=window.SurvivalFrontView;
   const roster=Array.from(window.SurvivalRoster||[]), byKey=new Map(roster.map(p=>[String(p.id),p]));
-  const displayPerson=(p,version)=>version===1?p:window.SurvivalLibrary.profile(p);
-  const storageKey='grail-suv.newspaper.v2',legacyKey='grail-suv.newspaper.v1';
+  const displayPerson=(p,version)=>{
+    if(version===1)return p;
+    const profile=window.SurvivalLibrary.profile(p);
+    return version===3&&Number.isFinite(profile.year)?{...profile,...window.SurvivalLibrary.rank(profile.year,profile.kind)}:profile;
+  };
+  const storageKey='grail-suv.frontier.v3',secondKey='grail-suv.newspaper.v2',legacyKey='grail-suv.newspaper.v1';
   let currentSaveKey=storageKey;
   const roles={writer:'作家・詩人',artist:'芸術家',thinker:'思想家',scientist:'科学者',leader:'指導者',warrior:'武人',explorer:'旅人・探検家',healer:'医師・治療者',deity:'神話・伝承',inventor:'発明家'};
   const count=n=>Number(n).toLocaleString('ja-JP');
@@ -20,6 +24,13 @@
   function show(id,scroll=true) {
     view=id; screens.forEach(k=>{$(k).hidden=k!==id;});
     $('edition').textContent=({front:'開戦特別号',draft:'契約候補名簿',campaign:'戦地通信',result:'最終報'})[id];
+    document.body.classList.toggle('frontier-playing',state?.version===3 && (id==='campaign'||id==='result'));
+    if(state?.version!==3){
+      for(const panel of [$('campaign'),$('result')]){
+        panel.classList.remove('sfv-mounted');
+        panel.querySelectorAll(':scope > [data-front-view]').forEach(node=>node.remove());
+      }
+    }
     if(scroll){$('main').focus({preventScroll:true});window.scrollTo(0,0);}
   }
   function urlFor(raw,kind) {
@@ -146,15 +157,21 @@
     labels.append(dated,stars);
     const choose=el('button','choose','この人と契約');choose.type='button';choose.setAttribute('aria-label',p.name+'と契約する');
     choose.onclick=()=>{if(view==='draft' && token===generation)start(p);};
-    const source=credits(p);
-    const teaser=el('p','draft-voice',voice||'');
-    cell.append(well,labels,el('h3','',p.name),el('p','role',kind(p)+'・'+occupation(p)+'　強さ '+(p.strength??'—')),teaser,source,choose);
+    const source=credits(p),talent=currentSaveKey===storageKey?window.SurvivalFrontTales?.hero(p):null;
+    cell.append(well,labels,el('h3','',p.name),el('p','role',kind(p)+'・'+occupation(p)+(talent?'':'　強さ '+(p.strength??'—'))));
+    if(talent){
+      const ability=window.SurvivalFrontSkills.hero(p),skill=el('p','draft-talent');
+      skill.append(el('small','','二人の切り札'),document.createTextNode(ability.name));
+      const bio=el('details','draft-bio');bio.append(el('summary','','能力・人物・出典'),el('p','draft-voice',ability.summary),el('p','draft-voice',voice||''),el('p','role','戦闘力 '+(p.strength??'—')),source);
+      skill.append(el('span','draft-project',talent.signature));
+      cell.append(skill,choose,bio);
+    }else cell.append(el('p','draft-voice',voice||''),source,choose);
     portrait(well,p,generic=>source.replaceChildren(...credits(p,generic).childNodes));
     return cell;
   }
   function draftCount(){
     $('draft-count').textContent=hand.length+' 人';
-    $('draft-note').textContent=hand.length?'時代と職能、星の数を見てひとりと契約してください。':'候補名簿を読み込めませんでした。';
+    $('draft-note').textContent=hand.length?(currentSaveKey===storageKey?'相棒の得意技を見て、ひとりと契約しよう。':'十騎からひとりと契約しよう。'):'候補名簿を読み込めませんでした。';
     $('draw-retry').hidden=hand.length>=10;
   }
   function paintDraft(scroll=true){
@@ -172,7 +189,7 @@
     try {
       const reserve=()=>[...roster].map(p=>({p,r:Math.random()})).sort((a,b)=>a.r-b.r).slice(0,10).map(x=>x.p);
       const fallback=new Promise(resolve=>{timer=setTimeout(()=>resolve(reserve()),9000);});
-      const result=await Promise.race([window.SurvivalLibrary?.draw(10)??Promise.resolve(reserve()),fallback]);
+      const result=await Promise.race([window.SurvivalLibrary?.draw(10,{frontier:true})??Promise.resolve(reserve()),fallback]);
       if(current!==token)return;
       const ids=new Set(),names=new Set();
       hand=(Array.isArray(result)?result:[]).filter(p=>{
@@ -191,10 +208,12 @@
     paintDraft();
   }
   async function start(p) {
-    if(!engine){$('status').textContent='ゲームの読み込みが完了しませんでした。ページを再読み込みしてください。';return;}
+    const version=currentSaveKey===storageKey?3:currentSaveKey===legacyKey?1:2;
+    const game=version===3?frontier:engine;
+    if(!game || (version===3&&!field)){$('status').textContent='ゲームを読み込めませんでした。ページを再読み込みしてください。';return;}
     if(view!=='draft'||state)return;
     const generation=++token;
-    person=p;state=engine.start(p,roster,p.summonSeed);hand=[];persist();
+    person=displayPerson(p,version);state=game.start(person,roster,p.summonSeed,version);hand=[];persist();
     const outcome=await window.SummonCeremony?.contract(p,{art:ceremonyArt,text:()=>state?.bond?.opening||''});
     if(token===generation&&!outcome?.cancelled)campaign();
   }
@@ -264,6 +283,18 @@
   function campaign(scroll=true){
     if(state.status!=='playing'){result(scroll);return;}
     show('campaign',scroll);const day=state.day+1;
+    if(state.version===3){
+      const turn=state;
+      const options=frontier.options(turn);
+      field.renderCampaign($('campaign'),turn,{
+        ...fieldHooks(),options,scene:frontier.scene(turn),
+        choose(id){
+          if(view!=='campaign'||shared||state!==turn||state.day+1!==day||!options.some(o=>o.id===id))return;
+          state=frontier.advance(turn,id);persist();campaign();
+        }
+      });
+      return;
+    }
     $('day-title').textContent=state.active===2?'最後の決戦':'開戦 '+day+' 日目';
     $('campaign-date').textContent='第'+day+'号';meter($('world-meter'),state);
     livingScene(state,person);
@@ -289,6 +320,13 @@
     const opponents=[...new Set(options.map(o=>o.opponent).filter(Boolean))];
     $('opponents').replaceChildren(...(opponents.length?[linkedPeople('交戦相手　'+opponents.join('、'))]:[]));
     $('team').replaceChildren(team(state,person));$('archives').replaceChildren(archive(state.history));
+  }
+
+  function fieldHooks(){
+    return {
+      person,credits,portrait,linkedPeople,article:p=>urlFor(p?.article,'article'),
+      again:()=>$('again').click(),copy:()=>$('copy').click(),share:()=>$('share').click()
+    };
   }
 
   function packJSON(value) {return new TextEncoder().encode(JSON.stringify(value));}
@@ -320,10 +358,11 @@
         if(original[key]===hero[key])delete hero[key];
       }
     }
-    const payload=packJSON([hero,s.seed,s.actions,s.cast.map(r=>[r.name,r.strength,r.kind||'human'])]);
-    const prefix=s.version===1?'#sv1.':'#sv2.';
+    const prefix='#sv'+s.version+'.';
+    const identity=s.version===3&&original?.name===p.name?String(p.id):hero;
+    const payload=packJSON(s.version===3?[identity,s.seed,s.actions]:[hero,s.seed,s.actions,s.cast.map(r=>[r.name,r.strength,r.kind||'human'])]);
     const plain=prefix+'u'+base64(payload);setShare(plain);
-    if(!window.CompressionStream)return;
+    if(!window.CompressionStream||payload.length<360)return;
     try{
       const stream=new Blob([payload]).stream().pipeThrough(new CompressionStream('deflate'));
       const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
@@ -332,7 +371,7 @@
   }
   async function replay(hash){
     if(hash.length>26000)return false;
-    const m=/^#sv([12])\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
+    const m=/^#sv([123])\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
     const current=++token;
     try{
       let bytes=unbase(m[3]);if(bytes.length>19000)return false;
@@ -349,6 +388,23 @@
         bytes=new Uint8Array(sum);let at=0;for(const part of chunks){bytes.set(part,at);at+=part.length;}
       }
       const payload=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+      if(m[1]==='3'){
+        if(!Array.isArray(payload)||payload.length!==3)return false;
+        const [identity,seed,moves]=payload;
+        if(!Number.isInteger(seed)||seed<0||seed>4294967295||!Array.isArray(moves)||!moves.length||moves.length>24)return false;
+        let p;
+        if(typeof identity==='string')p=byKey.get(identity);
+        else if(identity&&typeof identity==='object'&&!Array.isArray(identity))p={...byKey.get(String(identity.id)),...serialPerson(identity)};
+        if(!p?.name||p.name.length>180||!urlFor(p.article,'article'))return false;
+        p=displayPerson(p,3);
+        let run=frontier.start(p,roster,seed);
+        for(const move of moves){
+          if(run.status!=='playing'||!frontier.options(run).some(o=>o.id===move))return false;
+          run=frontier.advance(run,move);
+        }
+        if(!run.ending||current!==token)return false;
+        person=p;state=run;shared=true;result(false,hash);return true;
+      }
       if(!Array.isArray(payload)||payload.length!==4)return false;
       const [delta,seed,actions,cast]=payload;
       if(!delta || typeof delta!=='object' || Array.isArray(delta) || !Array.isArray(actions) || actions.length<1 || actions.length>36 || !Array.isArray(cast) || cast.length>64)return false;
@@ -364,6 +420,11 @@
   }
   function result(scroll=true,hash=''){
     show('result',scroll);const final=state.ending;
+    if(state.version===3){
+      field.renderResult($('result'),state,fieldHooks());
+      updateResultActions(final,hash);
+      return;
+    }
     $('ending-title').textContent=state.status==='won'?'最後のマスター':'あなたの戦いは終わった';
     $('ending-day').textContent='第'+state.day+'日';meter($('final-meter'),state);
     const article=$('final-article'),prose=el('p','report-text');prose.append(linkedPeople(final.story));article.replaceChildren(rub(state.status==='won'?'聖杯獲得':'契約終了'),el('h3','',final.title),prose);
@@ -378,7 +439,10 @@
     article.append(stats);
     if(state.last)article.append(news('最終日の号外',state.last.news),news('あなたと相棒の最終日',state.last.personal));
     $('final-team').replaceChildren(team(state,person));$('final-history').replaceChildren(archive(state.history));
-    $('share-status').replaceChildren();$('again').textContent=shared&&readSave()?'自分の記録に戻る →':'新しく始める →';
+    updateResultActions(final,hash);
+  }
+  function updateResultActions(final,hash){
+    $('share-status').replaceChildren();$('again').textContent=shared&&readSave(storageKey)?'自分の記録に戻る →':'もう一度、十騎を召喚する →';
     shareMessage=xPost(final.shareText);
     if(hash)setShare(hash);else configureShare(state,person,token);
   }
@@ -389,13 +453,14 @@
     currentSaveKey=key;
     try{
       if(data.state){
-        const restored=engine.restore(data.state);
+        const restored=key===storageKey?frontier.restore(data.state):engine.restore(data.state);
         const p=displayPerson({...byKey.get(String(restored.hero.id)),...serialPerson(data.person)},restored.version);
         if(!p.name||!urlFor(p.article,'article'))return false;
         state=restored;person=p;campaign(false);return true;
       }
       if(Array.isArray(data.hand)&&data.hand.length){
-        hand=data.hand.slice(0,10).map(serialPerson).map(p=>displayPerson(p,key===legacyKey?1:2)).filter(p=>p.name&&urlFor(p.article,'article'));
+        const version=key===storageKey?3:key===legacyKey?1:2;
+        hand=data.hand.slice(0,10).map(serialPerson).map(p=>displayPerson({...byKey.get(String(p.id)),...p},version)).filter(p=>p.name&&urlFor(p.article,'article'));
         if(hand.length){paintDraft(false);return true;}
       }
     }catch {}
@@ -412,15 +477,17 @@
     previousRun();
   }
   function previousRun(){
-    const saved=readSave(legacyKey),button=$('previous-run');
-    button.hidden=!saved?.state && !saved?.hand?.length;
-    if(!button.hidden){
-      button.textContent=saved.state?'旧版の記録を開く · '+(saved.person?.name||'相棒')+'／第'+saved.state.day+'日':'以前の召喚候補を開く';
-      button.onclick=()=>resume(legacyKey);
+    const host=$('previous-runs');host.replaceChildren();
+    for(const key of [secondKey,legacyKey]){
+      const saved=readSave(key);
+      if(!saved?.state&&!saved?.hand?.length)continue;
+      const button=el('button','old-run',saved.state?'旧版の記録を開く · '+(saved.person?.name||'相棒')+'／第'+saved.state.day+'日':'以前の召喚候補を開く');
+      button.type='button';button.onclick=()=>resume(key);host.append(button);
     }
   }
   function rules(){
-    const list=['実在の人物は英霊、物語や伝説の人物は幻霊、古代の神は神霊。一般に時代の古い相棒ほど強く、神霊は最高位の星6です。',...(engine?.rules?.()||['候補から一人と契約します。毎日三つの行動から一つを選びます。'])];
+    const activeRules=state&&state.version!==3?engine:frontier;
+    const list=[...(activeRules?.rules?.()||['相棒と契約し、毎日三つの行き先から一つを選びます。']), '実在の人物は英霊、物語や伝説の人物は幻霊、古代の神は神霊。古い時代の相棒ほど戦闘に強くなる傾向があります。'];
     $('rule-list').replaceChildren(...list.map(t=>el('li','',t)));
     const previous=$('reset-run');if(previous)previous.remove();
     if((view==='campaign'||view==='draft')&&!shared){
@@ -431,7 +498,7 @@
     if(typeof $('rules').showModal==='function')$('rules').showModal();else $('rules').setAttribute('open','');
   }
   $('draw').onclick=draw;$('draw-retry').onclick=draw;$('open-rules').onclick=rules;
-  $('again').onclick=()=>{if(shared&&readSave()){toFront();resume();}else{toFront(currentSaveKey!==legacyKey);draw();}};
+  $('again').onclick=()=>{if(shared&&readSave(storageKey)){toFront();resume(storageKey);}else{toFront(!shared&&currentSaveKey===storageKey);draw();}};
   $('copy').onclick=async()=>{
     const value=shareMessage+'\n'+shareURL;
     try{await navigator.clipboard.writeText(value);$('share-status').textContent='戦績と記録のリンクをコピーしました。';}
@@ -440,12 +507,13 @@
   async function boot(){
     const hash=location.hash;
     if(hash.length<=1800 && /^#r2\.(?:[hf][0-9a-z]{1,7}|wQ[1-9]\d{0,9})\.[0-9a-z]{1,5}\.[0-9a-z]{1,7}(?:\.[A-Za-z0-9_-]{1,1600})?$/.test(hash)){const archive=new URL('record.html',location.href);archive.hash=hash;location.replace(archive.href);return;}
-    if(/^#sv[12]\./.test(hash)){
+    if(/^#sv[123]\./.test(hash)){
       if(await replay(hash))return;
       $('status').textContent='この共有記録を読み込めませんでした。';
     }
+    shared=false;
     if(!resume(storageKey)){show('front',false);previousRun();}
   }
-  window.addEventListener('hashchange',()=>{if(/^#sv[12]\./.test(location.hash))boot();});
+  window.addEventListener('hashchange',()=>{if(/^#sv[123]\./.test(location.hash))boot();});
   boot();
 })();
