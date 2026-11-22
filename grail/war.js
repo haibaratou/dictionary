@@ -769,13 +769,13 @@
   }
 
   const campaignPressures = {
-    "都市戦":"市内に最初の退避命令が出た朝",
-    "大陸予選":"大陸間の補給便が途絶えた日",
-    "広域連盟戦":"同盟の合図が敵に聞かれてしまった夜",
-    "霊脈争奪戦":"霊脈を断たれて魔力が一晩分しか残らなかった日",
-    "大聖杯包囲戦":"包囲線の内側で水の配給が始まった日",
-    "七大戦線の合流":"七つの戦区の避難列が一つに合流した日",
-    "世界決戦":"最後の戦場から帰る道が一本だけになった朝"
+    "都市戦":"市内に最初の退避命令が出た",
+    "大陸予選":"大陸間の補給便が途絶えた",
+    "広域連盟戦":"同盟の合図が敵に聞かれてしまった",
+    "霊脈争奪戦":"霊脈を断たれて魔力は一晩分しか残っていない",
+    "大聖杯包囲戦":"包囲線の内側で水の配給が始まった",
+    "七大戦線の合流":"七つの戦区の避難列が一つに合流した",
+    "世界決戦":"最後の戦場から帰る道が一本だけになった"
   };
 
   // Four-sentence encounters already have their own last-line joke. Let the
@@ -823,7 +823,10 @@
       const landscape=warFronts[scenes.indexOf(battle.scene)] || warFronts[0];
       story=landscape+expand("{R}との小競り合いで、{C}とあなたは助けを呼ぶ声に同時に振り返った。")+expand(help);
     }
-    return {title:"召喚"+when.year+"年目　"+when.phase,story:campaignPressures[when.phase]+"、"+story};
+    const title="召喚"+when.year+"年目　"+when.phase;
+    const pressure=campaignPressures[when.phase];
+    if (completedSentences(story)>=4) return {title:title+" ─ "+pressure,story};
+    return {title,story:pressure+"。"+story};
   }
 
   const fallenLegacies = {
