@@ -1,0 +1,288 @@
+body.sc-open { overflow: hidden; }
+
+.summon-ceremony {
+  --sc-paper: #edf5f6;
+  --sc-metal: #abe5ec;
+  --sc-quiet: #b4c5cb;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  color-scheme: dark;
+  color: var(--sc-paper);
+  background: #08141e;
+  font-family: var(--sans, "Yu Gothic", Meiryo, sans-serif);
+  text-align: left;
+}
+
+.summon-ceremony[data-metal="gold"] { --sc-metal: #f5ce82; }
+.summon-ceremony[data-metal="divine"] { --sc-metal: #ffe6a2; }
+.summon-ceremony * { box-sizing: border-box; }
+
+.sc-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sc-top {
+  width: min(100%, 1450px);
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: max(17px, env(safe-area-inset-top)) clamp(18px, 4.6vw, 78px) 15px;
+}
+
+.sc-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #d0dadd;
+  font: 700 13px/1.4 var(--serif, "Yu Mincho", serif);
+  letter-spacing: .17em;
+}
+
+.sc-title::before {
+  content: "";
+  width: 27px;
+  height: 1px;
+  background: var(--sc-metal);
+}
+
+.sc-controls { display: flex; align-items: center; gap: 8px; }
+
+.sc-controls button {
+  min-height: 39px;
+  padding: 7px 13px;
+  border: 1px solid #93ada861;
+  border-radius: 1px;
+  background: #091821cb;
+  color: #e1ebea;
+  font: 600 12px/1.4 var(--sans, sans-serif);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sc-controls button:hover,
+.sc-controls button:focus-visible {
+  border-color: var(--sc-metal);
+  background: #19323e;
+  outline: 1px solid var(--sc-metal);
+  outline-offset: 2px;
+}
+
+.sc-stage {
+  width: min(100%, 1450px);
+  min-height: 0;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  align-items: stretch;
+  padding: 0 clamp(22px, 6vw, 95px) max(20px, env(safe-area-inset-bottom));
+}
+
+.sc-orbit { position:relative; min-height: 0; min-width: 0; }
+
+.sc-art-card {
+  position:absolute;
+  left:50%;
+  top:49%;
+  display:grid;
+  place-items:center;
+  width:min(64%, calc(var(--sc-r, 110px) * 1.05));
+  aspect-ratio: .84;
+  overflow:hidden;
+  opacity:0;
+  border:2px solid var(--sc-metal);
+  outline:1px solid #e1dbb095;
+  outline-offset:4px;
+  background:#192a33;
+  box-shadow:0 0 42px #172f3b, 0 5px 20px #07131d;
+  transform:translate(-50%,-50%) perspective(480px) rotateY(82deg) scale(.8);
+  transition:transform .39s cubic-bezier(.18,.72,.22,1),opacity .23s;
+}
+
+.sc-art-card.sc-materialized {
+  transform:translate(-50%,-50%) perspective(480px) rotateY(0deg) scale(1);
+  opacity:1;
+}
+
+.sc-art-card > * {
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  margin:0;
+}
+
+.sc-art-card img, .sc-art-card canvas {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 35%;
+}
+
+.sc-monogram {
+  display:grid;
+  place-items:center;
+  color:var(--sc-metal);
+  background:radial-gradient(ellipse at 45% 38%, #304e55, #0e1f2b 80%);
+  font:700 clamp(24px, 5vw, 82px)/1.2 var(--serif, "Yu Mincho", serif);
+}
+
+.sc-panel {
+  align-self: center;
+  min-width: 0;
+  display: grid;
+  gap: clamp(13px, 2.7vh, 25px);
+  padding: 14px 0 18px clamp(15px, 2vw, 30px);
+}
+
+.sc-brow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: space-between;
+  color: var(--sc-metal);
+  font: 700 12px/1.5 var(--sans, sans-serif);
+  letter-spacing: .16em;
+  border-bottom: 1px solid #aac4c054;
+  padding-bottom: 7px;
+}
+
+.sc-count {
+  font: 16px/1 Georgia, serif;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sc-heading {
+  min-height: 2.4em;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: #fff9e9;
+  font: 650 clamp(25px, 4.2vw, 64px)/1.2 var(--serif, "Yu Mincho", serif);
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 16px #020911;
+}
+
+.sc-heading.sc-long { font-size: clamp(20px, 2.7vw, 37px); }
+
+.sc-meta {
+  margin: -7px 0 0;
+  color: var(--sc-quiet);
+  min-height: 1.4em;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: .04em;
+}
+
+.sc-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 17px;
+  margin: 0;
+  padding: 0;
+}
+
+.sc-slot {
+  min-width: 0;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5px 0;
+  border-top: 1px solid #91ada151;
+  color: #dce5e6;
+}
+
+.sc-slot > span,
+.sc-slot > b {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+.sc-slot.sc-visible > span,
+.sc-slot.sc-visible > b {
+  opacity: 1;
+  transform: none;
+}
+
+.sc-slot b {
+  font: 600 clamp(12px, 1.24vw, 19px)/1.28 var(--serif, "Yu Mincho", serif);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-slot span { color: #9bb9c3; font: 10px/1.2 Georgia, serif; letter-spacing: .1em; }
+.sc-slot.sc-high span { color: #edca80; }
+.sc-slot.sc-chosen b { color: var(--sc-metal); }
+.sc-slot.sc-chosen.sc-visible { border-color: var(--sc-metal); }
+
+.sc-contract-text {
+  border-top: 1px solid #adc2bd55;
+  padding-top: 14px;
+  margin: 0;
+  color: #e4e5da;
+  font: 550 clamp(16px, 2vw, 25px)/1.7 var(--serif, "Yu Mincho", serif);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  max-height: min(35vh, 18rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 700px) and (min-height: 500px) {
+  .sc-top { padding: max(10px, env(safe-area-inset-top)) 16px 7px; }
+  .sc-title { font-size: 11px; gap: 6px; }
+  .sc-title::before { width: 16px; }
+  .sc-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(70px, 1fr) auto;
+    padding: 0 18px max(15px, env(safe-area-inset-bottom));
+  }
+  .sc-panel { padding: 0; gap: 8px; }
+  .sc-heading { min-height: 1.35em; font-size: clamp(25px, 7.7vw, 39px); }
+  .sc-heading.sc-long { font-size: clamp(18px, 5.8vw, 29px); }
+  .sc-meta { margin: 0; font-size: 12px; }
+  .sc-slot { min-height: 34px; padding: 2px 0; }
+  .sc-slot b { font-size: 13px; }
+  .sc-controls button { min-height: 36px; padding: 6px 9px; }
+  .sc-brow { font-size: 11px; padding-bottom: 3px; }
+  .sc-list { gap: 0 12px; }
+  .sc-contract .sc-panel { margin-bottom: 9vh; }
+}
+
+@media (max-height: 520px) {
+  .sc-top { padding: 7px 15px 0; }
+  .sc-controls button { min-height: 32px; padding: 4px 9px; }
+  .sc-stage { padding: 0 17px 8px; grid-template-columns: minmax(0, .87fr) minmax(0, 1.13fr); }
+  .sc-panel { gap: 5px; padding: 0; }
+  .sc-heading { font-size: clamp(18px, 4vw, 32px); min-height: 1.3em; }
+  .sc-heading.sc-long { font-size: 17px; }
+  .sc-brow { padding-bottom: 3px; font-size: 10px; }
+  .sc-meta { margin: 0; font-size: 10px; }
+  .sc-slot { min-height: 26px; padding: 2px 0; }
+  .sc-slot b { font-size: 11px; }
+  .sc-slot span { font-size: 8px; }
+  .sc-contract-text { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summon-ceremony *, .summon-ceremony *::before { transition: none; }
+}

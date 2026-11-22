@@ -7,8 +7,11 @@
   <link rel="canonical" href="https://haibaratou.github.io/dictionary/grail/">
   <meta property="og:title" content="人類最後の聖杯戦争"><meta property="og:description" content="80億人から、最後のひとりへ。歴史上の人物と組んで日々の号外を生き抜こう。"><meta property="og:type" content="website">
   <meta name="twitter:card" content="player"><meta name="twitter:player" content="https://haibaratou.github.io/dictionary/grail/?play=1"><meta name="twitter:player:width" content="700"><meta name="twitter:player:height" content="700">
-  <meta property="og:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg"><meta name="twitter:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg">
-  <link rel="stylesheet" href="survivor.css"><script defer src="survivor-roster.js"></script><script defer src="survivor-library.js"></script><script defer src="survivor-story.js"></script><script defer src="survivor-engine.js"></script><script defer src="survivor-ui.js"></script>
+  <meta property="og:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg?v=night2"><meta name="twitter:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg?v=night2">
+  <link rel="preload" as="image" href="summon-midnight.webp?v=night2">
+  <link rel="stylesheet" href="survivor.css?v=night2"><link rel="stylesheet" href="survivor-relics.css?v=night2"><link rel="stylesheet" href="summon-ceremony.css?v=night2">
+  <script defer src="survivor-roster.js"></script><script defer src="survivor-portraits-extra.js?v=night2"></script><script defer src="survivor-illustrated.js?v=night2"></script><script defer src="survivor-relics.js?v=night2"></script><script defer src="survivor-library.js?v=night2"></script>
+  <script defer src="survivor-story-v1.js?v=night2"></script><script defer src="survivor-engine-v1.js?v=night2"></script><script defer src="survivor-home.js?v=night2"></script><script defer src="survivor-bonds.js?v=night2"></script><script defer src="survivor-story.js?v=night2"></script><script defer src="survivor-engine.js?v=night2"></script><script defer src="summon-ceremony.js?v=night2"></script><script defer src="survivor-ui.js?v=night2"></script>
 </head>
 <body>
   <div class="paper">
@@ -18,16 +21,16 @@
     </header>
     <main id="main" tabindex="-1">
       <section id="front">
-        <div class="front-grid">
-          <div class="front-copy"><p class="rubric"><span></span> 世界同時開戦</p>
+        <div class="midnight">
+          <div class="midnight-copy">
+            <p class="prologue-time"><i></i> 開戦前夜　23:59</p>
             <h1>人類最後の<br><em>聖杯戦争</em></h1>
-            <p class="deck">80億人から、最後のひとりへ。</p>
-            <p class="intro">歴史上の人物、物語の登場人物、古代の神々。日本語版Wikipediaに記録された相棒と、日々の決断を重ねて生き残れ。</p>
-            <button type="button" id="draw" class="button primary">相棒候補を10人引く <span aria-hidden="true">→</span></button>
+            <p class="prologue">目が覚めると、手のひらが光っていた。<br>向かいのアパートで、ひとつずつ窓が灯る。<br>誰かが、その手を握り返す。</p>
+            <button type="button" id="draw" class="button invoke">十騎を召喚する <span aria-hidden="true">✧</span></button>
+            <button type="button" id="previous-run" class="old-run" hidden></button>
           </div>
-          <figure class="front-photo"><div id="cover-image" class="image-well"></div><figcaption id="cover-caption"></figcaption></figure>
         </div>
-        <div class="ticker"><div><span class="live-dot"></span><strong>開戦時の参加マスター</strong></div><div class="ticker-number">8,000,000,000 <span>人</span></div></div>
+        <div class="opening-note"><span class="live-dot"></span>80億人がマスターになった。最後まで残れるのは一組。</div>
       </section>
       <section id="draft" hidden>
         <div class="section-heading"><div><p class="rubric"><span></span> 契約候補</p><h2>相棒をひとり選ぶ</h2></div><span class="page-marker" id="draft-count"></span></div>
@@ -37,7 +40,8 @@
       <section id="campaign" hidden>
         <div class="section-heading"><div><p class="rubric"><span></span> 生存者速報</p><h2 id="day-title"></h2></div><span class="page-marker" id="campaign-date"></span></div>
         <div id="world-meter"></div>
-        <div class="dispatch-grid"><div id="daily-report"></div><aside class="decision"><h3>今日の行動</h3><div id="choices"></div><p id="opponents" class="sources"></p></aside></div>
+        <div class="living-scene" id="living-scene" hidden></div>
+        <div class="dispatch-grid"><aside class="decision"><h3>今日、あなたはどうする？</h3><div id="choices"></div><p id="opponents" class="sources"></p></aside><div id="daily-report"></div></div>
         <div id="team"></div><div id="archives"></div>
       </section>
       <section id="result" hidden>

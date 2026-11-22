@@ -2,7 +2,9 @@
   'use strict';
   const $=id=>document.getElementById(id), engine=window.SurvivalEngine;
   const roster=Array.from(window.SurvivalRoster||[]), byKey=new Map(roster.map(p=>[String(p.id),p]));
-  const storageKey='grail-suv.newspaper.v1';
+  const displayPerson=(p,version)=>version===1?p:window.SurvivalLibrary.profile(p);
+  const storageKey='grail-suv.newspaper.v2',legacyKey='grail-suv.newspaper.v1';
+  let currentSaveKey=storageKey;
   const roles={writer:'作家・詩人',artist:'芸術家',thinker:'思想家',scientist:'科学者',leader:'指導者',warrior:'武人',explorer:'旅人・探検家',healer:'医師・治療者',deity:'神話・伝承',inventor:'発明家'};
   const count=n=>Number(n).toLocaleString('ja-JP');
   const screens=['front','draft','campaign','result'];
@@ -27,7 +29,7 @@
       if(kind==='article')return u.protocol==='https:' && u.hostname==='ja.wikipedia.org' && u.pathname.startsWith('/wiki/') ? u.href:'';
       if(kind==='file')return u.protocol==='https:' && ['commons.wikimedia.org','ja.wikipedia.org'].includes(u.hostname) ? u.href:'';
       if(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(raw) && raw.length<=3000000)return raw;
-      if(u.protocol==='https:' && /^(upload\.wikimedia\.org|commons\.wikimedia\.org|ja\.wikipedia\.org)$/.test(u.hostname))return u.href;
+      if(u.protocol==='https:' && /^(upload\.wikimedia\.org|thumb\.wikimedia\.org|commons\.wikimedia\.org|ja\.wikipedia\.org)$/.test(u.hostname))return u.href;
       // Bundled public-domain Commons images are relative assets in this directory.
       if(!raw.startsWith('//') && !raw.includes('..') && !/^[A-Za-z][\w+.-]*:/.test(raw) && !raw.startsWith('/') && !raw.includes('\\'))return raw;
     } catch {}
@@ -36,7 +38,7 @@
   function sourceAnchor(text,href) {
     const a=el('a','',text);a.href=href;a.target='_blank';a.rel='noopener noreferrer';return a;
   }
-  function credits(p,generic=p.displayGeneric||!(p.localImage||p.image)) {
+  function credits(p,mode='relic') {
     const line=el('span','sources');
     const wiki=urlFor(p.article,'article');
     if(wiki){
@@ -45,7 +47,10 @@
       const article=sourceAnchor('日本語版Wikipedia'+(title!==p.name?'「'+title+'」':''),wiki);
       article.setAttribute('aria-label',kind(p)+'・'+p.name+'の出典 '+title+'（日本語版Wikipedia）');line.append(article);
     }
-    if(generic){line.append(document.createTextNode(' · 職能イラスト（共通）'));return line;}
+    if(mode!=='photo'){
+      const note=mode==='illustration'?'人物別の創作画':(window.SurvivalRelics?.label(p)||'召喚の象徴');
+      line.append(document.createTextNode(' · '+note));return line;
+    }
     const file=urlFor(p.filePage,'file'), caption=[p.credit,p.license].filter(Boolean).join('／');
     if(file || caption) {
       if(line.childNodes.length)line.append(document.createTextNode(' · '));
@@ -71,35 +76,46 @@
     }
     out.append(document.createTextNode(text.slice(position)));return out;
   }
-  function portrait(well,p,ready,failed,cover=false) {
-    const common=window.SurvivalLibrary?.fallback?.(p)||'archetypes/'+(Object.hasOwn(roles,p.role)?p.role:'explorer')+'.webp';
-    const candidates=p.displayGeneric?[p.displayImage,common]:[p.localImage,p.displayImage,p.image,...(cover?[]:[common])];
-    const sources=[...new Set(candidates.map(s=>urlFor(s,'image')).filter(Boolean))];
-    let i=0;
-    function next(){
-      if(i>=sources.length){
-        if(cover){failed?.();return;}
-        well.replaceChildren(el('span','role-print',roles[p.role]||'契約候補'));ready?.(true);return;
-      }
-      const src=sources[i++],generic=src===common||src.startsWith('archetypes/')||!!p.displayGeneric;
-      const img=el('img');img.alt=generic?occupation(p)+'の職能イラスト（共通）':p.name+'の肖像';
-      img.decoding='async';img.referrerPolicy='no-referrer';
-      if(!generic&&/Hyakuninisshu|Hyakunin_isshu|poet\d+\.webp/i.test([p.filePage,p.localImage].join(' ')))img.style.objectPosition='center 85%';
-      if(generic)img.className='shared-art';
-      const timer=setTimeout(retry,/^https:/.test(src)?2300:5500);
-      function retry(){clearTimeout(timer);img.onload=null;img.onerror=null;next();}
-      img.onload=()=>{
-        if(!img.naturalWidth){retry();return;}
-        clearTimeout(timer);img.onerror=null;
-        if(cover && img.naturalWidth<280){failed?.();return;}
-        well.replaceChildren(img);
-        if(cover){img.style.objectFit='cover';img.style.objectPosition='center 29%';}
-        ready?.(generic);
-      };
-      img.onerror=retry;img.src=src;
-    }
-    next();
+  // A candidate keeps the same personal picture throughout a run. Source captions
+  // follow the picture on screen, including when a remote image cannot be loaded.
+  const sheetImages=new Map();
+  function sheetImage(path){
+    if(!sheetImages.has(path))sheetImages.set(path,new Promise(resolve=>{
+      const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>resolve(null);image.src=path;
+    }));
+    return sheetImages.get(path);
   }
+  function portrait(well,p,ready,large=false){
+    const ticket=Symbol();well.pictureTicket=ticket;
+    const current=()=>well.pictureTicket===ticket;
+    function put(node,mode){
+      if(!current())return;
+      well.dataset.picture=mode;
+      well.replaceChildren(node);ready?.(mode);
+    }
+    const relic=window.SurvivalRelics?.render(p,{large})||el('span','role-print',p.name);
+    put(relic,'relic');
+    const sheet=window.SurvivalIllustrated?.get(p.name);
+    if(sheet){
+      sheetImage(sheet[0]).then(image=>{
+        if(!image || !current() || well.dataset.picture==='photo')return;
+        const canvas=el('canvas','summoned-person');canvas.width=240;canvas.height=240;
+        canvas.setAttribute('role','img');canvas.setAttribute('aria-label',p.name+'の人物別創作画');
+        canvas.getContext('2d').drawImage(image,(sheet[1]%4)*240,Math.floor(sheet[1]/4)*240,240,240,0,0,240,240);
+        put(canvas,'illustration');
+      });
+    }
+    const paths=[...new Set([p.localImage,p.image,p.imageFallback].map(src=>urlFor(src,'image')).filter(src=>src&&!src.startsWith('archetypes/')))];
+    function next(i){
+      if(!current()||!paths[i])return;
+      const img=el('img');img.alt=p.name+'の肖像';img.decoding='async';img.referrerPolicy='no-referrer';
+      if(/Hyakuninisshu|Hyakunin_isshu|poet\d+\.webp/i.test([p.filePage,p.localImage].join(' ')))img.style.objectPosition='center 85%';
+      img.onload=()=>img.naturalWidth>30?put(img,'photo'):next(i+1);img.onerror=()=>next(i+1);
+      img.src=paths[i];
+    }
+    next(0);
+  }
+  const ceremonyArt=p=>{const block=el('div','summon-art-window');portrait(block,p,null,true);return block;};
   const kind=p=>({human:'英霊',phantom:'幻霊',divine:'神霊'})[p.kind]||p.kindLabel||'英霊';
   const occupation=p=>p.roleLabel||roles[p.role]||p.role||'歴史人物';
   const rate=p=>'★'.repeat(Math.max(1,Math.min(6,Number(p.rarity)||1)));
@@ -109,35 +125,20 @@
     const date=p.year!=null && p.year!=='' && Number.isInteger(yr) && yr!==0 ? (yr<0?'紀元前'+Math.abs(yr):yr)+'年' : '';
     return !date||era.includes(date)?era:era+'・'+date;
   }
-  function cover(){
-    const bundled=roster.filter(p=>p.localImage);
-    const choices=[...bundled.filter(p=>p.kind!=='human'||p.year<1900),...bundled,...roster].filter((p,i,a)=>a.indexOf(p)===i && urlFor(p.article,'article'));
-    const well=$('cover-image'),caption=$('cover-caption');
-    const attempt=i=>{
-      if(i>=Math.min(choices.length,14)){
-        well.replaceChildren(el('p','cover-type','世界同時開戦'));
-        caption.textContent='聖杯戦争通信　開戦特別号';return;
-      }
-      const p=choices[i];
-      portrait(well,p,generic=>{caption.replaceChildren(el('strong','portrait-title',kind(p)+'・'+p.name),credits(p,generic));},()=>attempt(i+1),true);
-    };
-    attempt(0);
-  }
   function serialPerson(p){
     const o={};
-    for(const k of ['id','name','article','image','localImage','displayImage','year','yearBasis','era','role','roleLabel','credit','license','filePage','rarity','strength','kind','kindLabel','articleTitle','licenseUrl']) {
+    for(const k of ['id','name','article','image','imageFallback','localImage','summonSeed','year','yearBasis','era','role','roleLabel','credit','license','filePage','rarity','strength','kind','kindLabel','articleTitle','licenseUrl']) {
       if(['string','number'].includes(typeof p?.[k]) && String(p[k]).length<=2500)o[k]=p[k];
     }
-    if(p?.displayGeneric===true)o.displayGeneric=true;
     return o;
   }
   function persist() {
     if(shared)return;
     try{
-      localStorage.setItem(storageKey,JSON.stringify(state?{v:1,state,person:serialPerson(person)}:{v:1,hand:hand.map(serialPerson)}));
+      localStorage.setItem(currentSaveKey,JSON.stringify(state?{v:1,state,person:serialPerson(person)}:{v:1,hand:hand.map(serialPerson)}));
     }catch {$('status').textContent='このブラウザでは進行を保存できません。';}
   }
-  function candidate(p,generation){
+  function candidate(p,generation,voice){
     const cell=el('article','candidate'),well=el('div','image-well');
     const labels=el('div','candidate-head'),stars=el('span','stars',rate(p));
     stars.setAttribute('aria-label','レアリティ'+rate(p).length);
@@ -146,7 +147,8 @@
     const choose=el('button','choose','この人と契約');choose.type='button';choose.setAttribute('aria-label',p.name+'と契約する');
     choose.onclick=()=>{if(view==='draft' && token===generation)start(p);};
     const source=credits(p);
-    cell.append(well,labels,el('h3','',p.name),el('p','role',kind(p)+'・'+occupation(p)+'　強さ '+(p.strength??'—')),source,choose);
+    const teaser=el('p','draft-voice',voice||'');
+    cell.append(well,labels,el('h3','',p.name),el('p','role',kind(p)+'・'+occupation(p)+'　強さ '+(p.strength??'—')),teaser,source,choose);
     portrait(well,p,generic=>source.replaceChildren(...credits(p,generic).childNodes));
     return cell;
   }
@@ -157,13 +159,15 @@
   }
   function paintDraft(scroll=true){
     show('draft',scroll);draftCount();const g=token;
-    $('candidates').replaceChildren(...hand.map(p=>candidate(p,g)));
+    const voices=window.SurvivalBonds?.previews?.(hand,hand[0]?.summonSeed||0)||[];
+    $('candidates').replaceChildren(...hand.map((p,i)=>candidate(p,g,voices[i])));
   }
   async function draw(){
     const current=++token;
+    currentSaveKey=storageKey;
+    window.SummonCeremony?.prime?.();
     state=null;person=null;hand=[];shared=false;
-    show('draft');$('draft-note').textContent='日本語版Wikipediaの名簿から候補を選んでいます。';
-    $('draft-count').textContent='';$('draw-retry').hidden=true;$('candidates').replaceChildren(el('p','empty-draw loader','候補名簿を編集中…'));
+    $('draw').disabled=true;$('draw-retry').disabled=true;
     let timer;
     try {
       const reserve=()=>[...roster].map(p=>({p,r:Math.random()})).sort((a,b)=>a.r-b.r).slice(0,10).map(x=>x.p);
@@ -176,12 +180,23 @@
         ids.add(String(p.id));names.add(p.name);return true;
       }).slice(0,10);
     }catch {if(current!==token)return;}
-    finally{clearTimeout(timer);}
-    if(current===token){paintDraft(false);persist();}
+    finally{clearTimeout(timer);$('draw').disabled=false;$('draw-retry').disabled=false;}
+    if(current!==token)return;
+    hand=hand.map(p=>({...p,summonSeed:Math.floor(Math.random()*4294967296)}));
+    if(hand.length){
+      persist();
+      const outcome=await window.SummonCeremony?.draw(hand,{art:ceremonyArt});
+      if(current!==token||outcome?.cancelled)return;
+    }
+    paintDraft();
   }
-  function start(p) {
+  async function start(p) {
     if(!engine){$('status').textContent='ゲームの読み込みが完了しませんでした。ページを再読み込みしてください。';return;}
-    person=p;state=engine.start(p,roster);hand=[];persist();campaign();
+    if(view!=='draft'||state)return;
+    const generation=++token;
+    person=p;state=engine.start(p,roster,p.summonSeed);hand=[];persist();
+    const outcome=await window.SummonCeremony?.contract(p,{art:ceremonyArt,text:()=>state?.bond?.opening||''});
+    if(token===generation&&!outcome?.cancelled)campaign();
   }
   function rub(text){const p=el('p','rubric');p.append(el('span'),document.createTextNode(text));return p;}
   function meter(target,s){
@@ -222,16 +237,44 @@
     }
     details.append(list);return details;
   }
+  function livingScene(s,p){
+    const stage=$('living-scene'),frame=engine.scene?.(s);
+    if(!frame||!s.bond){stage.hidden=true;stage.replaceChildren();return;}
+    stage.hidden=false;
+    const visual=el('div','scene-portrait'), panel=el('div','scene-copy'), setup=el('div','scene-setup');
+    const caption=el('div','scene-photo-caption');
+    caption.append(el('strong','',p.name),el('small','',kind(p)+'　'+rate(p)));
+    const symbol=el('div','scene-art');
+    portrait(symbol,p,null,true);visual.append(symbol,caption);
+    setup.append(rub(s.day===0?'召喚された夜':frame.kind==='callback'?'あの日の返事':frame.kind==='final'?'最後の朝':'ふたりの手記'));
+    if(s.day===0 && s.bond.opening)setup.append(el('p','first-meeting',s.bond.opening));
+    else setup.append(el('p','partner-token','相棒の'+person.name+'と迎える、第'+frame.day+'日。'));
+    const name=el('h3','scene-heading',frame.title);
+    const prose=el('p','scene-text');prose.append(linkedPeople(frame.body));
+    panel.append(name,prose);
+    if(['pick','callback'].includes(s.last?.relationship?.eventType) && s.bond.lastMemory){
+      const memory=el('details','echo-note');memory.open=true;
+      memory.append(el('summary','','第'+s.last.day+'日にしたこと'),el('p','',s.bond.lastMemory));
+      panel.insertBefore(memory,name);
+    }
+    const token=el('div','keepsake');
+    token.append(el('span','','預かったもの'),el('b','',s.bond.keepsake));
+    setup.append(token);stage.replaceChildren(visual,setup,panel);
+  }
   function campaign(scroll=true){
     if(state.status!=='playing'){result(scroll);return;}
     show('campaign',scroll);const day=state.day+1;
     $('day-title').textContent=state.active===2?'最後の決戦':'開戦 '+day+' 日目';
     $('campaign-date').textContent='第'+day+'号';meter($('world-meter'),state);
+    livingScene(state,person);
     const last=state.last;
     if(last){
       const headline=news('第'+last.day+'日・世界の号外',last.news);
       headline.append(el('p','sources',tally(last)));
-      $('daily-report').replaceChildren(headline,news('あなたと相棒の記録',last.personal,last.actionTitle));
+      $('daily-report').replaceChildren(news('前日のふたり',last.personal,last.actionTitle),headline);
+    }else if(state.bond){
+      $('daily-report').replaceChildren(news('開戦前のあなた',window.SurvivalHome.before(state.seed)),
+        news('開戦速報','全世界で80億の契約印を確認。今朝、あなたの住む町でも最初の避難所が開いた。'));
     }else $('daily-report').replaceChildren(news('第1日・開戦',person.name+'と契約した。80億のマスターが動き出した世界で、最初の一手を決めよう。','最初の朝'));
     const options=engine.options(state);
     $('choices').replaceChildren(...options.map(option=>{
@@ -239,7 +282,7 @@
       b.type='button';line.append(el('strong','',option.title),el('i','','→'));
       b.append(line,el('span','action-description',option.description),el('span','forecast',option.risk));
       b.onclick=event=>{
-        if(event.detail>1||view!=='campaign'||state.day+1!==day)return;
+        if(view!=='campaign'||state.day+1!==day)return;
         b.disabled=true;state=engine.advance(state,option.id);persist();campaign();
       };return b;
     }));
@@ -278,21 +321,22 @@
       }
     }
     const payload=packJSON([hero,s.seed,s.actions,s.cast.map(r=>[r.name,r.strength,r.kind||'human'])]);
-    const plain='#sv1.u'+base64(payload);setShare(plain);
+    const prefix=s.version===1?'#sv1.':'#sv2.';
+    const plain=prefix+'u'+base64(payload);setShare(plain);
     if(!window.CompressionStream)return;
     try{
       const stream=new Blob([payload]).stream().pipeThrough(new CompressionStream('deflate'));
       const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
-      if(view==='result' && token===generation && bytes.length<payload.length)setShare('#sv1.z'+base64(bytes));
+      if(view==='result' && token===generation && bytes.length<payload.length)setShare(prefix+'z'+base64(bytes));
     }catch {}
   }
   async function replay(hash){
     if(hash.length>26000)return false;
-    const m=/^#sv1\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
+    const m=/^#sv([12])\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
     const current=++token;
     try{
-      let bytes=unbase(m[2]);if(bytes.length>19000)return false;
-      if(m[1]==='z'){
+      let bytes=unbase(m[3]);if(bytes.length>19000)return false;
+      if(m[2]==='z'){
         if(!window.DecompressionStream)return false;
         const reader=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate')).getReader();
         const chunks=[];let sum=0;
@@ -309,9 +353,9 @@
       const [delta,seed,actions,cast]=payload;
       if(!delta || typeof delta!=='object' || Array.isArray(delta) || !Array.isArray(actions) || actions.length<1 || actions.length>36 || !Array.isArray(cast) || cast.length>64)return false;
       if(cast.some(c=>!Array.isArray(c)||typeof c[0]!=='string'||c[0].length>180||!Number.isInteger(c[1])||c[1]<15||c[1]>100))return false;
-      const p={...byKey.get(String(delta.id)),...serialPerson(delta)};
+      const p=displayPerson({...byKey.get(String(delta.id)),...serialPerson(delta)},Number(m[1]));
       if(!nameOf(p)||nameOf(p).length>180||!urlFor(p.article,'article'))return false;
-      let simulation=engine.start(p,[],seed);
+      let simulation=engine.start(p,[],seed,Number(m[1]));
       simulation.cast=cast.map(([name,strength,kind])=>({name,strength,kind:['human','phantom','divine'].includes(kind)?kind:'human'}));
       for(const id of actions){if(typeof id!=='string'||id.length>25)return false;simulation=engine.advance(simulation,id);}
       if(!simulation.ending || current!==token)return false;
@@ -324,6 +368,7 @@
     $('ending-day').textContent='第'+state.day+'日';meter($('final-meter'),state);
     const article=$('final-article'),prose=el('p','report-text');prose.append(linkedPeople(final.story));article.replaceChildren(rub(state.status==='won'?'聖杯獲得':'契約終了'),el('h3','',final.title),prose);
     if(final.wish){const wish=el('blockquote');wish.append(linkedPeople('聖杯への願い「'+final.wish+'」'));article.append(wish);}
+    if(state.version===2)article.append(news('戦場の外で',window.SurvivalHome.after(state)));
     const resultFacts=[['80億人中の順位',count(state.rank)+'位'],['生存した日数',state.day+'日']];
     if(final.winner)resultFacts.push(['最後の契約者の相棒',final.winner]);
     if(final.killer)resultFacts.push(['あなたを倒した相手',final.killer]);
@@ -337,19 +382,20 @@
     shareMessage=xPost(final.shareText);
     if(hash)setShare(hash);else configureShare(state,person,token);
   }
-  function readSave(){try{const raw=localStorage.getItem(storageKey);return raw&&raw.length<1800000?JSON.parse(raw):null;}catch{return null;}}
-  function resume(){
-    const data=readSave();
+  function readSave(key=currentSaveKey){try{const raw=localStorage.getItem(key);return raw&&raw.length<1800000?JSON.parse(raw):null;}catch{return null;}}
+  function resume(key=currentSaveKey){
+    const data=readSave(key);
     if(data?.v!==1)return false;
+    currentSaveKey=key;
     try{
       if(data.state){
         const restored=engine.restore(data.state);
-        const p={...byKey.get(String(restored.hero.id)),...serialPerson(data.person)};
+        const p=displayPerson({...byKey.get(String(restored.hero.id)),...serialPerson(data.person)},restored.version);
         if(!p.name||!urlFor(p.article,'article'))return false;
         state=restored;person=p;campaign(false);return true;
       }
       if(Array.isArray(data.hand)&&data.hand.length){
-        hand=data.hand.slice(0,10).map(serialPerson).filter(p=>p.name&&urlFor(p.article,'article'));
+        hand=data.hand.slice(0,10).map(serialPerson).map(p=>displayPerson(p,key===legacyKey?1:2)).filter(p=>p.name&&urlFor(p.article,'article'));
         if(hand.length){paintDraft(false);return true;}
       }
     }catch {}
@@ -360,9 +406,18 @@
     try{history.replaceState(null,'',address.href);}catch{if(location.hash)location.hash='';}
   }
   function toFront(erase=false){
-    token++;shared=false;state=null;person=null;hand=[];clearHash();$('status').textContent='';
-    if(erase)try{localStorage.removeItem(storageKey);}catch{}
+    token++;window.SummonCeremony?.cancel?.();shared=false;state=null;person=null;hand=[];clearHash();$('status').textContent='';
+    if(erase)try{localStorage.removeItem(currentSaveKey);}catch{}
     show('front');
+    previousRun();
+  }
+  function previousRun(){
+    const saved=readSave(legacyKey),button=$('previous-run');
+    button.hidden=!saved?.state && !saved?.hand?.length;
+    if(!button.hidden){
+      button.textContent=saved.state?'旧版の記録を開く · '+(saved.person?.name||'相棒')+'／第'+saved.state.day+'日':'以前の召喚候補を開く';
+      button.onclick=()=>resume(legacyKey);
+    }
   }
   function rules(){
     const list=['実在の人物は英霊、物語や伝説の人物は幻霊、古代の神は神霊。一般に時代の古い相棒ほど強く、神霊は最高位の星6です。',...(engine?.rules?.()||['候補から一人と契約します。毎日三つの行動から一つを選びます。'])];
@@ -376,7 +431,7 @@
     if(typeof $('rules').showModal==='function')$('rules').showModal();else $('rules').setAttribute('open','');
   }
   $('draw').onclick=draw;$('draw-retry').onclick=draw;$('open-rules').onclick=rules;
-  $('again').onclick=()=>{if(shared&&readSave()){toFront();resume();}else{toFront(true);draw();}};
+  $('again').onclick=()=>{if(shared&&readSave()){toFront();resume();}else{toFront(currentSaveKey!==legacyKey);draw();}};
   $('copy').onclick=async()=>{
     const value=shareMessage+'\n'+shareURL;
     try{await navigator.clipboard.writeText(value);$('share-status').textContent='戦績と記録のリンクをコピーしました。';}
@@ -385,12 +440,12 @@
   async function boot(){
     const hash=location.hash;
     if(hash.length<=1800 && /^#r2\.(?:[hf][0-9a-z]{1,7}|wQ[1-9]\d{0,9})\.[0-9a-z]{1,5}\.[0-9a-z]{1,7}(?:\.[A-Za-z0-9_-]{1,1600})?$/.test(hash)){const archive=new URL('record.html',location.href);archive.hash=hash;location.replace(archive.href);return;}
-    if(hash.startsWith('#sv1.')){
+    if(/^#sv[12]\./.test(hash)){
       if(await replay(hash))return;
       $('status').textContent='この共有記録を読み込めませんでした。';
     }
-    if(!resume())show('front',false);
+    if(!resume(storageKey)){show('front',false);previousRun();}
   }
-  window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#sv1.'))boot();});
-  cover();boot();
+  window.addEventListener('hashchange',()=>{if(/^#sv[12]\./.test(location.hash))boot();});
+  boot();
 })();

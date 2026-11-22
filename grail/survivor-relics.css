@@ -1,0 +1,63 @@
+.sr-relic {
+  --sr-paper: #ece3cb;
+  --sr-ink: #253743;
+  --sr-spot: #a14b3e;
+  display: block;
+  position: relative;
+  container-type: inline-size;
+  isolation: isolate;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  color: var(--sr-ink);
+  background: var(--sr-paper);
+  text-align: left;
+}
+.sr-relic__drawing {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.sr-relic__year, .sr-relic__name {
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  line-height: 1.12;
+}
+.sr-relic__year {
+  left: 7%;
+  top: 6.5%;
+  padding-bottom: 2px;
+  border-bottom: 1px solid currentColor;
+  color: var(--sr-ink);
+  font: 600 clamp(9px, 5.4cqw, 30px)/1.15 Georgia, "Yu Mincho", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: .025em;
+}
+.sr-relic__name {
+  right: 7%;
+  bottom: 5%;
+  max-width: 88%;
+  color: var(--sr-ink);
+  font: 650 clamp(9px, 5cqw, 26px)/1.16 "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+  letter-spacing: .04em;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+.sr-relic__name.sr-relic__name--long { font-size: clamp(8px,4.2cqw,22px); }
+.sr-relic--large .sr-relic__name { bottom: 6.5%; }
+@container (max-width: 90px) {
+  .sr-relic__year { top: 5%; font-size: 8px; border: 0; }
+  .sr-relic__name { display: none; }
+}
+@media (forced-colors: active) {
+  .sr-relic { forced-color-adjust: none; }
+  .sr-relic__name, .sr-relic__year { color: var(--sr-ink); }
+}

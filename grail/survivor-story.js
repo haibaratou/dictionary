@@ -274,9 +274,10 @@
   function identity(c) {
     const h = printed(c.hero,'名もなき参加者');
     if (/巌窟王|エドモン[・＝ ]?ダンテス|エドモン[・＝ ]?ダンテ|モンテ[・＝ ]?クリスト伯|Edmond Dant[eè]s/i.test(h)) return 'dantes';
-    if (/インドラ|帝釈天|^Indra$/i.test(h)) return 'indra';
+    if (c.hero?.kind==='divine' && /^(?:インドラ|帝釈天|Indra)$/i.test(h)) return 'indra';
     if (/孫武|孫子|孫臏|諸葛|司馬懿|黒田官兵衛|竹中半兵衛|ハンニバル|カール・フォン・クラウゼヴィッツ|張良|太公望|孔明/.test(h)) return 'strategist';
-    return Object.hasOwn(arcs,c.role) ? c.role : Object.hasOwn(arcs,c.hero?.role) ? c.hero.role : 'thinker';
+    const role=Object.hasOwn(arcs,c.role) ? c.role : Object.hasOwn(arcs,c.hero?.role) ? c.hero.role : 'thinker';
+    return (role==='deity' || role==='indra') && c.hero?.kind!=='divine' ? 'thinker' : role;
   }
   function words(text,c) {
     const role = identity(c);

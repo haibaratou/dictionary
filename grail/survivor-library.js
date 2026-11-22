@@ -17,6 +17,21 @@
   const verified = new Map();
   const coveredTitles = new Set();
   const kindLabels = {human:'英霊',phantom:'幻霊',divine:'神霊'};
+  // A narrative profession never establishes divinity. Legacy catalogue rows
+  // and previously cached discoveries can still contain the old role label.
+  function profile(record) {
+    if (!record) return record;
+    const kind=Object.hasOwn(kindLabels,record.kind)?record.kind:'human';
+    if (kind==='phantom' && /^(?:パンドラ|パンドーラー)$/.test(record.name)) {
+      return {...record,kind,kindLabel:kindLabels[kind],role:'thinker',roleLabel:'ギリシア神話の最初の女性',
+        yearBasis:'ヘシオドス『仕事と日々』に名が記される。紀元前700年頃。'};
+    }
+    if (kind!=='divine' && (record.role==='deity'||record.role==='god')) {
+      return {...record,kind,kindLabel:kindLabels[kind],role:'thinker',
+        roleLabel:kind==='phantom'?'伝承・物語の人物':'歴史人物'};
+    }
+    return {...record,kind,kindLabel:kindLabels[kind]};
+  }
   const permutations = items => items.map(item => ({item, key: Math.random()}))
     .sort((a,b) => a.key-b.key).map(entry=>entry.item);
   const articleTitle = url => decodeURIComponent(new URL(url).pathname.slice(6)).replace(/_/g,' ');
@@ -48,9 +63,9 @@
     const title=articleTitle(record.article);
     const key=title+'|'+record.name;
     if (verified.has(key) && !knownLocal) return;
-    const kind=kindLabels[record.kind]?record.kind:record.role==='deity'?'divine':'human';
+    const person=profile(record),kind=person.kind;
     coveredTitles.add(title);
-    verified.set(key, {...record,...rank(record.year,kind),kind,kindLabel:kindLabels[kind],id:record.id || key});
+    verified.set(key, {...person,...rank(record.year,kind),id:record.id || key});
   }
   for (const entry of window.SurvivalRoster || []) add(entry,true);
   let cached=[];
@@ -62,35 +77,6 @@
   } catch {}
   cached.forEach(entry=>add(entry));
   const checked=new Set();
-  const imageChecks=new Map();
-  function checkImage(url, timeout) {
-    if (!url) return Promise.resolve(false);
-    if (imageChecks.has(url)) return imageChecks.get(url);
-    const promise=new Promise(resolve=>{
-      const image=new Image();
-      let done=false;
-      function finish(ok) {
-        if (done) return;
-        done=true; clearTimeout(timer); image.onload=null; image.onerror=null;
-        if (!ok) setTimeout(()=>imageChecks.delete(url),30000);
-        resolve(ok);
-      }
-      const timer=setTimeout(()=>finish(false),timeout);
-      image.onload=()=>finish(image.naturalWidth>=35 && image.naturalHeight>=35);
-      image.onerror=()=>finish(false);
-      image.referrerPolicy='no-referrer'; image.src=url;
-    });
-    imageChecks.set(url,promise); return promise;
-  }
-  function fallback(entry) {
-    const key=entry.kind==='divine'?(entry.strength>=96?'divine':'deity'):entry.kind==='phantom'?'phantom':Object.hasOwn(roles,entry.role)?entry.role:'explorer';
-    return 'archetypes/'+key+'.webp';
-  }
-  async function display(entry) {
-    if (entry.localImage && await checkImage(entry.localImage,1000)) return {...entry,displayImage:entry.localImage,displayGeneric:false};
-    if (entry.image && await checkImage(entry.image,1800)) return {...entry,displayImage:entry.image,displayGeneric:false};
-    return {...entry,displayImage:fallback(entry),displayGeneric:true};
-  }
   async function json(host,params) {
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),6500);
@@ -193,11 +179,18 @@
     }
     if (Math.random()<1-Math.pow(.992,total)) take(h=>h.kind==='divine');
     if (Math.random()<1-Math.pow(.965,total)) take(h=>h.kind==='phantom');
+    const pictured=h=>Boolean(h.localImage || window.SurvivalIllustrated?.has(h.name));
+    // These slots are drawn across professions and use different identified people,
+    // including in a browser with no connection to Wikimedia.
+    const portraitRoles=permutations([...new Set(available.filter(pictured).map(h=>h.role))]);
+    for (const role of portraitRoles.slice(0,Math.floor(total*.45))) {
+      take(h=>h.kind!=='divine' && h.role===role && pictured(h));
+    }
     const professions=permutations(Object.keys(roles));
     // Vary the occupations and familiar faces within a hand even when one list,
     // such as prizewinning scientists, contributes a large number of records.
     for (const role of professions.slice(0,Math.floor(total*.3))) take(h=>h.kind!=='divine' && h.role===role);
-    for (let i=0;i<Math.floor(total*.4);i++) take(h=>h.spotlight && h.kind!=='divine');
+    for (let i=0;i<Math.floor(total*.1);i++) take(h=>h.spotlight && h.kind!=='divine');
     while (picked.length<total && picked.length<available.length) {
       const oldSize=picked.length;
       take(h=>h.kind!=='divine');
@@ -206,7 +199,7 @@
         if (oldSize===picked.length) break;
       }
     }
-    return permutations(await Promise.all(picked.map(display)));
+    return permutations(picked);
   }
-  window.SurvivalLibrary=Object.freeze({draw,discover,rank,fallback,all:()=>[...verified.values()]});
+  window.SurvivalLibrary=Object.freeze({draw,discover,rank,profile,all:()=>[...verified.values()]});
 })();
