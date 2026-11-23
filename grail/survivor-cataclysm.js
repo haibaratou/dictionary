@@ -139,9 +139,14 @@
     // appear opposite that source to contain the phenomenon and save people.
     // No human pair running a relief effort generates a continental disaster.
     const focus=watch?s.finalRegion:s.region;
-    const activeSites=Math.min(occupied.length,3+Math.floor(dice(s.seed,day,"number of fronts")*5));
+    // World fronts exist independently of the household. An early war can
+    // have a single epicentre on another continent, even in a populated region.
+    const fronts=s.lifeMode===true
+      ? 1+Math.floor((day-1)*2/(s.deadline-2))+Math.floor(dice(s.seed,day,"number of fronts")*4)
+      : 3+Math.floor(dice(s.seed,day,"number of fronts")*5);
+    const activeSites=Math.min(occupied.length,fronts);
     const sites=occupied.slice().sort((a,b)=>{
-      if(a.id===focus)return -1;if(b.id===focus)return 1;
+      if(s.lifeMode!==true){if(a.id===focus)return -1;if(b.id===focus)return 1;}
       return dice(s.seed,day,a.id,"epicentre")-dice(s.seed,day,b.id,"epicentre");
     }).slice(0,activeSites);
     const priority=h=>h.kind==="divine"?(cataclysmic.has(identity(h))?4:3):h.kind==="phantom"&&h.strength>=65?2:h.strength>=70?1:0;
@@ -232,14 +237,39 @@
       b.range=final?[1,1]:[Math.floor(b.predictedDeaths*.84),Math.ceil(b.predictedDeaths*1.16)];
     }
     const noonDeaths=sum(rows,r=>r.noonDeaths),active=s.active-noonDeaths;
-    const local=battles.find(b=>b.area===s.region)||battles[0];
+    const home=rows.find(r=>r.id===s.region);
+    const local=s.lifeMode===true
+      ? battles.find(b=>b.area===home.credit)||battles.reduce((largest,b)=>b.noonDeaths>largest.noonDeaths?b:largest)
+      : battles.find(b=>b.area===s.region)||battles[0];
     const phase=final?"最後の二契約":close?"世界結界の収縮":day<=2?"同時多発戦":"連鎖災厄";
     const value={day,date:"第"+day+"日",hour:"12:00",phase,deadline:s.deadline,title:final?"人類最後の二人":local.phenomenon,
       body:final?"残った人間は二人。同じ聖杯に結ばれた最後の契約が、距離を越えて衝突する。":local.detail,
       origin:s.origin,region:s.region,newBattleCount,before:s.active,active,noonDeaths,regions:rows,local,battles};
+    if(s.lifeMode===true){
+      const kind=final?"duel":close?"collapse":!home.affected?"distant":local.isAftershock?"aftershock":home.epicentre?"epicentre":"spill";
+      value.context={kind,region:home.id,regionName:home.name,battleArea:local.area,battleAreaName:local.areaName,
+        localDeaths:home.noonDeaths,localEveningBase:home.eveningBase};
+    }
     frames.set(s,{watch,value});return value;
   }
   function observe(s){return s.status==="playing"?frame(s,false):null;}
+  const releases={
+    combat:{bonusSurvival:24,bonusSuccess:15,rescueFraction:.008},
+    shelter:{bonusSurvival:22,bonusSuccess:15,rescueFraction:.023},
+    rescue:{bonusSurvival:18,bonusSuccess:19,rescueFraction:.045}
+  };
+  function masterPenalty(s){return Math.round((100-clamp(Number(s.life?.vitality??100),0,100))/5);}
+  function released(s,day){const p=s.life?.power;return s.lifeMode===true&&p?.day===day&&Object.hasOwn(releases,p.kind)?p:null;}
+  function powerInfo(s,kind){
+    if(!s||s.lifeMode!==true||s.status!=="playing")return null;
+    const f=frame(s,false),key=kind||released(s,f.day)?.kind,p=Object.hasOwn(releases,key)?releases[key]:null;
+    if(!p)return null;
+    const home=f.regions.find(r=>r.id===s.region);
+    const target=home.eveningBase>0?home:f.regions.reduce((a,r)=>r.eveningBase>a.eveningBase?r:a,home);
+    const expectedSaved=f.day>=s.deadline-1?0:Math.min(target.eveningBase,Math.ceil(target.eveningBase*p.rescueFraction*(1+s.hero.strength/100)));
+    return {bonusSurvival:p.bonusSurvival,bonusSuccess:p.bonusSuccess,penalty:masterPenalty(s),
+      target:target.id,targetName:target.name,expectedSaved};
+  }
   const peaceful=new Set(["writer","artist","musician","thinker","leader","healer","diplomat","scientist","inventor","explorer"]);
   function options(s){
     if(s.status!=="playing")return [];
@@ -287,8 +317,9 @@
       if(final)p=[.135+s.health*.033,.135+Math.min(prior,5)*.034,.10+(soft?trust*1.15:(s.hero.strength/100)*.17)][i]+trust;
       p+=clamp((s.hero.strength-30)/70,0,1)*(.012+danger*.059);
       if(qualified)p+=skill.bonus/100;
-      const survival=clamp(Math.round(p*100),1,96);
-      const success=final?survival:clamp(Math.round((i===0?.70:i===1?.72:.53)*100+s.allies*2+(qualified?12:0)+(s.health-2)*3),35,95);
+      const power=released(s,day),effect=power?releases[power.kind]:null;
+      const survival=clamp(Math.round(p*100)+(effect?.bonusSurvival||0)-(s.lifeMode===true?masterPenalty(s):0),1,96);
+      const success=final?survival:clamp(Math.round((i===0?.70:i===1?.72:.53)*100+s.allies*2+(qualified?12:0)+(s.health-2)*3)+(effect?.bonusSuccess||0),35,95);
       const roleTitle=i===2&&soft&&!final&&!penultimate?({
         writer:"災厄を止める一行を届ける",artist:"敵味方の空に同じ絵を描く",musician:"双方が聴ける一音を送る",
         healer:"両陣営に救命の刻限を告げる",scientist:"二つの現象の周期を揃える",inventor:"相棒と遠隔の応答器を鳴らす",
@@ -316,10 +347,13 @@
     const original=s.region,region=choice?.destination||s.region,moved=!!choice&&original!==region;
     const toRegion=f.regions.find(r=>r.id===region);
     const local=f.battles.find(b=>b.area===toRegion.credit)||f.local;
-    const saved=protection(s,choice,f,success);
+    const dayRescue=protection(s,choice,f,success);
+    const power=!watch&&released(s,day),effect=power&&powerInfo(s,power.kind);
+    let saved=dayRescue,powerSaved=0,ordinarySaved=0;
     const enemy=local.a.name===s.hero.name?local.b:local.a;
     const playerDeaths=!watch&&!alive?1:0;
-    const direct=!!choice&&alive&&success&&choice.routeType==="intervene"&&!peaceful.has(s.hero.role)&&(final||(!close&&dice(s.seed,day,"duel")<.18));
+    const encounter=s.lifeMode===true?Math.max(0,(day-2)/(s.deadline-2))*.85:.18;
+    const direct=!!choice&&alive&&success&&choice.routeType==="intervene"&&(!peaceful.has(s.hero.role)||power?.kind==="combat")&&(final||(!close&&dice(s.seed,day,"duel")<encounter));
     const duelDeaths=direct?1:0;
     const beforeRegions=f.regions.map(r=>({...r,incoming:moved&&r.id===region?1:0,outgoing:moved&&r.id===original?1:0}));
     let finalistArea=s.finalRegion;
@@ -328,12 +362,27 @@
     const casualtyRegion=final&&direct?finalistArea:region;
     const branch=f.battles.map(b=>({...b,impacts:b.noonImpacts.map(x=>({...x,period:"noon"})),deaths:b.noonDeaths}));
     const byArea=Object.fromEntries(branch.map(b=>[b.area,b]));
+    // A master can perish from the exhausted contract while their home is
+    // untouched. A personal incident is separate from the foreign headline.
+    const quiet=s.lifeMode===true&&!toRegion.affected&&!final&&!close;
+    const personalCause={id:"contract-failure",name:"令印の消失",kind:"condition",role:"cause"};
+    if(quiet&&(playerDeaths||duelDeaths)){
+      const title=playerDeaths?"当地で一組の契約が消失":"二組の契約が遭遇";
+      const fighting=new Set(f.battles.flatMap(b=>[b.a.name,b.b.name]));
+      const visitor=s.cast.find(h=>h.name!==s.champion.name&&!fighting.has(h.name))||enemy;
+      const encounter={...local,id:day+"-personal-"+region,area:region,areaName:toRegion.name,
+        a:playerDeaths?personalCause:s.hero,b:playerDeaths?s.hero:visitor,headline:title,phenomenon:title,
+        detail:playerDeaths?"広域災害の確認されていない土地で、一人のマスターの令印が消えた。":"この戦域を訪れた契約者同士の対決。",
+        aftershock:0,footprint:[region],noonDeaths:0,noonImpacts:[],predictedDeaths:0,range:[0,1],impacts:[],deaths:0,personalIncident:true};
+      encounter.fallout=encounter.detail;branch.push(encounter);byArea[region]=encounter;
+    }
     function add(b,id,n,kind){
       if(n<=0)return;
       b.impacts.push({region:id,deaths:n,period:"evening",kind});b.deaths+=n;
     }
     const ledger=beforeRegions.map(r=>{
       const available=r.population+r.incoming-r.outgoing;
+      const personal=(playerDeaths&&r.id===region?1:0),duels=duelDeaths&&r.id===casualtyRegion?1:0;
       // Seats reserved at the penultimate dusk are the two physically living
       // masters. During the final their heroes can reach one another from afar.
       let remaining;
@@ -341,21 +390,28 @@
       else if(close)remaining=watch||!alive?(r.id===finalistArea?2:0):(r.id===finalistArea?1:0)+(r.id===region?1:0);
       else {
         const reserve=(r.id===s.finalRegion?2:0)+(r.id===region&&alive?1:0);
-        const adjusted=r.eveningBase-(r.id===region?saved:0);
+        const adjusted=r.eveningBase-(r.id===region?dayRescue:0);
         remaining=Math.min(available,Math.max(reserve,available-adjusted));
+        if(s.lifeMode===true){
+          const attainable=n=>Math.max(0,Math.min(available-personal-duels,n));
+          const unaided=attainable(Math.max(reserve,available-r.eveningBase));
+          const afterChoice=attainable(remaining);
+          const afterPower=effect&&effect.target===r.id?attainable(Math.max(reserve,available-adjusted+effect.expectedSaved)):afterChoice;
+          ordinarySaved+=afterChoice-unaided;powerSaved+=afterPower-afterChoice;remaining=afterPower;
+        }
       }
-      const personal=(playerDeaths&&r.id===region?1:0),duels=duelDeaths&&r.id===casualtyRegion?1:0;
       if(available-remaining<personal+duels&&!close&&!final)remaining=Math.max(0,available-personal-duels);
       const casualties=available-remaining,ordinary=casualties-personal-duels;
       if(casualties<0||ordinary<0)throw Error("地域人口の確定に失敗しました。");
-      const home=byArea[r.credit]||byArea[local.area],source=byArea[r.secondary],spill=source?Math.floor(ordinary*r.spill):0;
+      const home=byArea[r.credit]||(quiet&&r.id===region&&byArea[region])||byArea[local.area],source=byArea[r.secondary],spill=source?Math.floor(ordinary*r.spill):0;
       add(home,r.id,ordinary-spill,"災厄");if(spill)add(source,r.id,spill,"波及");
       add(home,r.id,personal,"あなた");add(home,r.id,duels,"直接対決");
       return {id:r.id,name:r.name,before:r.before,after:remaining,deaths:r.noonDeaths+casualties,noonDeaths:r.noonDeaths,eveningDeaths:casualties,incoming:r.incoming,outgoing:r.outgoing,
-        affected:r.affected,epicentre:r.epicentre,sourceArea:r.credit,aftershock:r.aftershock};
+        affected:r.affected,epicentre:r.epicentre,sourceArea:r.credit||(quiet&&r.id===region&&(personal||duels)?region:null),aftershock:r.aftershock};
     });
+    if(s.lifeMode===true)saved=ordinarySaved+powerSaved;
     const active=sum(ledger,r=>r.after),deaths=s.active-active,eveningDeaths=deaths-f.noonDeaths;
-    const exitEnemy=final?s.champion:enemy;
+    const exitEnemy=final?s.champion:quiet?personalCause:enemy;
     const namedCasualties=[];
     if(playerDeaths)namedCasualties.push({name:"あなた",hero:s.hero,killer:exitEnemy,region,kind:"master"});
     if(final&&(watch||alive))namedCasualties.push({name:(watch?f.local.a.name:s.champion.name)+"のマスター",hero:watch?f.local.a:s.champion,killer:direct?s.hero:null,region:watch?otherArea:finalistArea,kind:"master"});
@@ -373,10 +429,17 @@
       else if(choice.routeType==="protect")personal=s.hero.name+"と「"+choice.title+"」。"+fmt(saved)+"人が今夜を越えた。声を掛け合う人たちの輪の中で、二人も息をつけた。";
       else personal=s.hero.name+"が「"+choice.title+"」に応えた。"+(direct?"接近してきた別の契約者を一人倒した。":"")+"衝突の余波が短くなり、"+fmt(saved)+"人が夕刻の災厄を生き延びた。";
     }
-    return {day,hour:"21:00",before:s.active,active,deaths,noonDeaths:f.noonDeaths,eveningDeaths,worldDeaths:deaths-playerDeaths-duelDeaths,personalDeaths:playerDeaths,duelDeaths,otherPersonalDeaths:0,
+    if(playerDeaths&&quiet)personal="手の甲の令印は、消えかけるたびに"+s.hero.name+"の手の中で一度だけ光った。三度目に、光は戻らなかった。";
+    if(alive&&quiet&&success&&!moved&&!direct)personal=s.hero.name+"と"+toRegion.name+"で夜を迎えた。遠くの戦いは、今日はここまで届かなかった。";
+    const result={day,hour:"21:00",before:s.active,active,deaths,noonDeaths:f.noonDeaths,eveningDeaths,worldDeaths:deaths-playerDeaths-duelDeaths,personalDeaths:playerDeaths,duelDeaths,otherPersonalDeaths:0,
       regions:ledger,battles:branch,newBattleCount:f.newBattleCount,local:byArea[local.area],news,personal,namedCasualties,hero:s.hero,region,from:original,
       actionId:choice?.id||null,actionTitle:choice?.title||null,routeType:choice?.routeType||null,forecast:choice?.forecast||null,
       success,alive:watch?null:alive,watch,saved,health,allies,killer:playerDeaths?exitEnemy:null,winner:final?(alive?s.hero:s.champion):null};
+    if(s.lifeMode===true){
+      result.context=f.context;result.npSaved=result.powerSaved=powerSaved;result.powerArea=effect?effect.target:null;
+      result.powerKind=power?power.kind:null;result.powerName=power?power.name:null;
+    }
+    return result;
   }
   const known={
     "夏目漱石":["明日の読者に最後の一行を渡したい","新聞の余白に、最後まで耳を貸してくれた人の名を書いた"],
@@ -411,7 +474,7 @@
     const worldStory="第"+terminal.day+"日。"+terminal.local.a.name+"と"+terminal.local.b.name+"の最終戦を経て、"+
       (win?"あなた":winner.name+"のマスター")+"が人類最後の生存者となった。聖杯への願いは「"+wish+"」。";
     const rank=s.rank, shareText="80億人、最後の聖杯戦争。"+h.name+"と第"+s.day+"日まで生存、"+fmt(rank)+"位。"+
-      (win?"人類最後の一人になった。":"最後に見たのは"+s.last.killer.name+"の顕現。")+"聖杯を得たのは"+(win?"私たち":winner.name+"のマスター")+"。";
+      (win?"人類最後の一人になった。":s.lifeMode===true&&s.last.killer.kind==="condition"?"最後に相棒の手の中で、令印が消えた。":"最後に見たのは"+s.last.killer.name+"の顕現。")+"聖杯を得たのは"+(win?"私たち":winner.name+"のマスター")+"。";
     return {title:win?"世界最後の一人":"二人の契約が終わった日",winner,killer:s.last.killer,story,wish,worldStory,shareText,
       worldDay:terminal.day,worldDeaths:TOTAL-1,playerDay:s.day,rank,activeAtExit:s.activeAtExit,saved:s.saved,kills:s.kills,
       stats:{population:TOTAL,rank,kills:s.kills,days:s.day,saved:s.saved,activeAtExit:s.activeAtExit}};
@@ -446,5 +509,5 @@
     "昼までの死者は確定済み。午後に一つ行動を選ぶと、移動・能力・地域間の災厄を含めてその夜の人口が決まる。",
     "生存率は行動者が夜を越える確率。成功率は生き残った場合に救助などの目的を果たせる確率。最終日は生存が勝利条件。",
     "本人が倒れても世界の戦争は続く。生存順位はその日の最後に倒れた順として、同夜の生存人口に1を加える。"];}
-  g.CataclysmWar=Object.freeze({start,observe,options,advance,restore,rules,trait,regions});
+  g.CataclysmWar=Object.freeze({start,observe,options,advance,restore,rules,trait,regions,powerInfo});
 })(typeof window!=="undefined"?window:globalThis);

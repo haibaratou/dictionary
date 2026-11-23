@@ -9,8 +9,9 @@
     return version>=3&&Number.isFinite(profile.year)?{...profile,...window.SurvivalLibrary.rank(profile.year,profile.kind)}:profile;
   };
   const storageKey='grail-suv.cataclysm.v4',thirdKey='grail-suv.frontier.v3',secondKey='grail-suv.newspaper.v2',legacyKey='grail-suv.newspaper.v1';
-  const versionFor=key=>key===storageKey?4:key===thirdKey?3:key===secondKey?2:1;
-  let currentSaveKey=storageKey;
+  const lifeKey='grail-suv.life.v5',life=window.GrailLife,lifeView=window.GrailLifeView,entry=window.GrailLifeEntry;
+  const versionFor=key=>key===lifeKey?5:key===storageKey?4:key===thirdKey?3:key===secondKey?2:1;
+  let currentSaveKey=lifeKey,prospect=null,lifeCursor=null,drawPending=false;
   let catPhase='dawn',recordHash='';
   const roles={writer:'作家・詩人',artist:'芸術家',thinker:'思想家',scientist:'科学者',leader:'指導者',warrior:'武人',explorer:'旅人・探検家',healer:'医師・治療者',deity:'神話・伝承',inventor:'発明家'};
   const count=n=>Number(n).toLocaleString('ja-JP');
@@ -27,15 +28,20 @@
   function show(id,scroll=true) {
     view=id; screens.forEach(k=>{$(k).hidden=k!==id;});
     document.body.dataset.screen=id;
-    const archiveView=id==='draft'?currentSaveKey!==storageKey:state&&state.version!==4;
+    const playingLife=state?Boolean(state.lifeMode):currentSaveKey===lifeKey;
+    document.body.classList.toggle('life-edition',playingLife);
+    const archiveView=id==='draft'?versionFor(currentSaveKey)<4:state&&state.version!==4;
     document.body.classList.toggle('legacy-view',Boolean(archiveView));
-    if(state?.version!==4){
+    for(const screen of ['campaign','result']){
+      if(!playingLife||screen!==id)lifeView?.clear($(screen));
+    }
+    if(state?.version!==4||playingLife){
       for(const panel of [$('campaign'),$('result')]){
         panel.classList.remove('ct-mounted');
         panel.querySelectorAll(':scope > [data-cat-view]').forEach(node=>node.remove());
       }
     }
-    $('edition').textContent=({front:'開戦特別号',draft:'契約候補名簿',campaign:'戦地通信',result:'最終報'})[id];
+    $('edition').textContent=(playingLife?{front:'開戦前',draft:'契約候補',campaign:'生存記録',result:'最後の記録'}:{front:'開戦特別号',draft:'契約候補名簿',campaign:'戦地通信',result:'最終報'})[id];
     document.body.classList.toggle('frontier-playing',state?.version===3 && (id==='campaign'||id==='result'));
     if(state?.version!==3){
       for(const panel of [$('campaign'),$('result')]){
@@ -158,7 +164,16 @@
   function persist() {
     if(shared)return;
     try{
-      localStorage.setItem(currentSaveKey,JSON.stringify(state?{v:1,state,person:serialPerson(person),phase:catPhase}:{v:1,hand:hand.map(serialPerson)}));
+      let record;
+      if(currentSaveKey===lifeKey){
+        record={v:1,prospect};
+        if(state){
+          record.state={version:4,lifeMode:true,seed:state.seed,hero:serialPerson(person),cast:state.cast,playerName:state.playerName,life:{commands:state.life.commands}};
+          record.person=serialPerson(person);
+          record.cursor=lifeCursor;
+        }else if(hand.length)record.hand=hand.map(serialPerson);
+      }else record=state?{v:1,state,person:serialPerson(person),phase:catPhase}:{v:1,hand:hand.map(serialPerson)};
+      localStorage.setItem(currentSaveKey,JSON.stringify(record));
     }catch {$('status').textContent='このブラウザでは進行を保存できません。';}
   }
   function candidate(p,generation,voice){
@@ -170,11 +185,13 @@
     const choose=el('button','choose','この人と契約');choose.type='button';choose.setAttribute('aria-label',p.name+'と契約する');
     choose.onclick=()=>{if(view==='draft' && token===generation)start(p);};
     const source=credits(p),talent=currentSaveKey===thirdKey?window.SurvivalFrontTales?.hero(p):null;
-    const trait=currentSaveKey===storageKey?cat?.trait(p):null;
+    const trait=versionFor(currentSaveKey)>=4?cat?.trait(p):null;
     cell.append(well,labels,el('h3','',p.name),el('p','role',kind(p)+'・'+occupation(p)+((trait||talent)?'':'　強さ '+(p.strength??'—'))));
     if(trait){
-      const myth=window.SurvivalCatPowers.profile(p),skill=el('p','draft-talent',myth.skill||trait.name);
+      const myth=window.SurvivalCatPowers.profile(p),ability=currentSaveKey===lifeKey?life.ability(p):null;
+      const skill=el('p','draft-talent',ability?'宝具「'+ability.name+'」':myth.skill||trait.name);
       const bio=el('details','draft-bio');bio.append(el('summary','','能力・人物・出典'),el('p','draft-voice',myth.summary),el('p','draft-voice',trait.summary),source);
+      if(ability)bio.querySelector('summary').after(el('p','draft-voice',ability.description));
       cell.append(skill,choose,bio);
     }else if(talent){
       const ability=window.SurvivalFrontSkills.hero(p),skill=el('p','draft-talent');
@@ -188,17 +205,33 @@
   }
   function draftCount(){
     $('draft-count').textContent=hand.length+' 人';
-    $('draft-note').textContent=hand.length?(currentSaveKey===storageKey?'この十騎のうち、あなたと朝を迎えるのはひとり。':'十騎からひとりと契約しよう。'):'候補名簿を読み込めませんでした。';
+    $('draft-note').textContent=hand.length?(currentSaveKey===lifeKey?'生命力を分け、ともに生きる一騎を選ぶ。':currentSaveKey===storageKey?'この十騎のうち、あなたと朝を迎えるのはひとり。':'十騎からひとりと契約しよう。'):'候補名簿を読み込めませんでした。';
     $('draw-retry').hidden=hand.length>=10;
   }
   function paintDraft(scroll=true){
     show('draft',scroll);draftCount();const g=token;
-    const voices=currentSaveKey===storageKey?[]:window.SurvivalBonds?.previews?.(hand,hand[0]?.summonSeed||0)||[];
+    const voices=versionFor(currentSaveKey)>=4?[]:window.SurvivalBonds?.previews?.(hand,hand[0]?.summonSeed||0)||[];
     $('candidates').replaceChildren(...hand.map((p,i)=>candidate(p,g,voices[i])));
+    if(currentSaveKey===lifeKey)entry.draft?.(prospect,prospect?.playerName);
+  }
+  const entryHooks={birth, summon(name){
+    if(!prospect||view!=='front'||drawPending||hand.length)return;
+    prospect.playerName=Array.from(String(name||'').trim()).slice(0,32).join('')||life.profile(prospect).name;
+    persist();return draw();
+  },rename(name){
+    if(!prospect||view!=='front'||drawPending||hand.length)return;
+    prospect.playerName=Array.from(String(name||'')).slice(0,32).join('');persist();
+  }};
+  function birth(){
+    if(view!=='front'||drawPending)return;
+    const seed=crypto.getRandomValues(new Uint32Array(1))[0];
+    currentSaveKey=lifeKey;prospect={seed,origin:window.CataclysmAtlas.origin(seed)};
+    persist();entry.record(prospect,entryHooks);
   }
   async function draw(){
+    if(drawPending)return;
+    drawPending=true;
     const current=++token;
-    currentSaveKey=storageKey;
     catPhase='dawn';recordHash='';
     window.SummonCeremony?.prime?.();
     state=null;person=null;hand=[];shared=false;
@@ -215,9 +248,9 @@
         ids.add(String(p.id));names.add(p.name);return true;
       }).slice(0,10);
     }catch {if(current!==token)return;}
-    finally{clearTimeout(timer);$('draw').disabled=false;$('draw-retry').disabled=false;}
+    finally{clearTimeout(timer);drawPending=false;$('draw').disabled=false;$('draw-retry').disabled=false;}
     if(current!==token)return;
-    hand=hand.map(p=>({...p,summonSeed:Math.floor(Math.random()*4294967296)}));
+    hand=hand.map(p=>({...p,summonSeed:currentSaveKey===lifeKey?prospect.seed:Math.floor(Math.random()*4294967296)}));
     if(hand.length){
       persist();
       const outcome=await window.SummonCeremony?.draw(hand,{art:ceremonyArt});
@@ -226,11 +259,13 @@
     paintDraft();
   }
   async function start(p) {
-    const version=versionFor(currentSaveKey),game=version===4?cat:version===3?frontier:engine;
-    if(!game || (version===3&&!field) || (version===4&&!catView)){$('status').textContent='ゲームを読み込めませんでした。ページを再読み込みしてください。';return;}
+    const version=versionFor(currentSaveKey),game=version===5?life:version===4?cat:version===3?frontier:engine;
+    if(!game || (version===3&&!field) || (version===4&&!catView)||(version===5&&!lifeView)){$('status').textContent='ゲームを読み込めませんでした。ページを再読み込みしてください。';return;}
     if(view!=='draft'||state)return;
     const generation=++token;
-    person=displayPerson(p,version);state=version===4?cat.start(person,roster,p.summonSeed):game.start(person,roster,p.summonSeed,version);hand=[];catPhase='dawn';persist();
+    person=displayPerson(p,version);
+    state=version===5?life.start(person,roster,prospect.seed,undefined,prospect.playerName):version===4?cat.start(person,roster,p.summonSeed):game.start(person,roster,p.summonSeed,version);
+    hand=[];catPhase='dawn';lifeCursor=null;persist();
     const outcome=await window.SummonCeremony?.contract(p,{art:ceremonyArt,text:()=>state?.bond?.opening||''});
     if(token===generation&&!outcome?.cancelled)campaign();
   }
@@ -298,6 +333,34 @@
     setup.append(token);stage.replaceChildren(visual,setup,panel);
   }
   function campaign(scroll=true){
+    if(state.lifeMode){
+      if(state.status!=='playing'){result(scroll);return;}
+      show('campaign',scroll);
+      const turn=state,episode=life.episode(turn);
+      const openDecision=()=>!shared&&view==='campaign'&&state===turn&&
+        lifeCursor?.day===episode.day&&lifeCursor.minute>=episode.minute;
+      function changeMana(method){
+        if(!openDecision())return;
+        const meter=life.mana(turn);
+        if(method==='supply'?!meter.canSupply:!meter.canRelease)return;
+        state=life[method](turn);persist();campaign(false);
+      }
+      lifeView.campaign($('campaign'),turn,{
+        ...catHooks(),cursor:lifeCursor,
+        saveCursor(cursor){
+          if(shared||view!=='campaign'||state!==turn||!cursor||cursor.day!==episode.day)return;
+          lifeCursor={day:cursor.day,minute:Math.min(episode.minute,Math.max(0,Number(cursor.minute)||0)),speed:cursor.speed,paused:Boolean(cursor.paused)};
+          persist();
+        },
+        supply:()=>changeMana('supply'),release:()=>changeMana('release'),
+        choose(index){
+          if(!openDecision()||!Number.isInteger(index)||index<0||index>2)return;
+          state=life.resolve(turn,index);
+          lifeCursor=state.status==='playing'?{day:state.day+1,minute:0,speed:lifeCursor.speed,paused:lifeCursor.paused}:null;
+          persist();campaign(false);
+        }
+      });return;
+    }
     if(state.version===4){
       if(state.status!=='playing'&&catPhase!=='night'){result(scroll);return;}
       show('campaign',scroll);
@@ -372,9 +435,15 @@
     };
   }
 
+  function ownRecordKey(){
+    if(!shared)return null;
+    const matching=state?.version===4?storageKey:state?.version===3?thirdKey:state?.version===2?secondKey:legacyKey;
+    if(readSave(lifeKey))return lifeKey;
+    return !state?.lifeMode&&readSave(matching)?matching:null;
+  }
   function catHooks(){
     return {...fieldHooks(),prepareExport,lookup:name=>byName.get(name),
-      againLabel:shared&&readSave(storageKey)?'自分の記録に戻る':'次の召喚へ',
+      againLabel:ownRecordKey()?'自分の記録に戻る':'新しい人生を始める',
       share(){prepareExport();$('share').click();},
       copy(host){prepareExport();return copyRecord(host);}
     };
@@ -416,12 +485,12 @@
         if(original[key]===hero[key])delete hero[key];
       }
     }
-    const prefix='#sv'+s.version+'.';
+    const prefix='#sv'+(s.lifeMode?5:s.version)+'.';
     const identity=s.version>=3&&original?.name===p.name?String(p.id):hero;
     let data;
     if(s.version===4){
       const cast=s.cast.map(r=>[String(r.id),r.name===String(r.id)?'':r.name,r.kind,r.role,r.strength]);
-      data=[identity,s.seed,s.actions,cast];
+      data=s.lifeMode?[identity,s.seed,s.life.commands,cast,s.playerName||'']:[identity,s.seed,s.actions,cast];
     }else if(s.version===3)data=[identity,s.seed,s.actions];
     else data=[hero,s.seed,s.actions,s.cast.map(r=>[r.name,r.strength,r.kind||'human'])];
     const payload=packJSON(data);
@@ -435,7 +504,7 @@
   }
   async function replay(hash){
     if(hash.length>26000)return false;
-    const m=/^#sv([1234])\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
+    const m=/^#sv([12345])\.([uz])([A-Za-z0-9_-]+)$/.exec(hash);if(!m)return false;
     const current=++token;
     try{
       let bytes=unbase(m[3]);if(bytes.length>19000)return false;
@@ -452,11 +521,13 @@
         bytes=new Uint8Array(sum);let at=0;for(const part of chunks){bytes.set(part,at);at+=part.length;}
       }
       const payload=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
-      if(m[1]==='3'||m[1]==='4'){
-        const version=Number(m[1]),game=version===4?cat:frontier;
-        if(!Array.isArray(payload)||(payload.length!==3&&!(version===4&&payload.length===4)))return false;
-        const [identity,seed,moves,recordedCast]=payload;
-        if(!Number.isInteger(seed)||seed<0||seed>4294967295||!Array.isArray(moves)||!moves.length||moves.length>24)return false;
+      if(Number(m[1])>=3){
+        const version=Number(m[1]),game=version===5?life:version===4?cat:frontier;
+        const validLengths=version===5?[5]:version===4?[3,4]:[3];
+        if(!Array.isArray(payload)||!validLengths.includes(payload.length))return false;
+        const [identity,seed,moves,recordedCast,playerName]=payload;
+        if(!Number.isInteger(seed)||seed<0||seed>4294967295||!Array.isArray(moves)||!moves.length||moves.length>(version===5?140:24))return false;
+        if(version===5&&(typeof playerName!=='string'||Array.from(playerName).length>32))return false;
         let p;
         if(typeof identity==='string')p=byKey.get(identity);
         else if(identity&&typeof identity==='object'&&!Array.isArray(identity))p={...byKey.get(String(identity.id)),...serialPerson(identity)};
@@ -475,13 +546,13 @@
             cast.push({id,name:alias||id,kind,role,strength});seen.add(alias||id);
           }
         }
-        let run=game.start(p,roster,seed,cast);
-        for(const move of moves){
+        let run=version===5?life.restore({version:4,lifeMode:true,hero:p,seed,cast,playerName,life:{commands:moves}},roster):game.start(p,roster,seed,cast);
+        if(version!==5)for(const move of moves){
           if(run.status!=='playing'||!game.options(run).some(o=>o.id===move))return false;
           run=game.advance(run,move);
         }
         if(!run.ending||current!==token)return false;
-        person=p;state=run;shared=true;catPhase='result';result(false,hash);return true;
+        person=p;state=run;shared=true;catPhase='result';lifeCursor=null;result(false,hash);return true;
       }
       if(!Array.isArray(payload)||payload.length!==4)return false;
       const [delta,seed,actions,cast]=payload;
@@ -500,6 +571,7 @@
     show('result',scroll);const final=state.ending;
     if(state.version===4){
       recordHash=hash;shareURL='';shareMessage='';$('share').removeAttribute('href');$('share-status').replaceChildren();
+      if(state.lifeMode){lifeView.result($('result'),state,{...catHooks(),isShared:shared});return;}
       catView.result($('result'),state,catHooks());return;
     }
     if(state.version===3){
@@ -524,7 +596,7 @@
     updateResultActions(final,hash);
   }
   function updateResultActions(final,hash){
-    $('share-status').replaceChildren();$('again').textContent=shared&&readSave(storageKey)?'自分の記録に戻る →':'もう一度、十騎を召喚する →';
+    $('share-status').replaceChildren();$('again').textContent=ownRecordKey()?'自分の記録に戻る →':'新しい人生を始める →';
     shareMessage=xPost(final.shareText);
     if(hash)setShare(hash);else configureShare(state,person,token);
   }
@@ -535,11 +607,13 @@
     currentSaveKey=key;
     try{
       if(data.state){
-        const restored=key===storageKey?cat.restore(data.state):key===thirdKey?frontier.restore(data.state):engine.restore(data.state);
+        const restored=key===lifeKey?life.restore(data.state,roster):key===storageKey?cat.restore(data.state):key===thirdKey?frontier.restore(data.state):engine.restore(data.state);
         const p=displayPerson({...byKey.get(String(restored.hero.id)),...serialPerson(data.person)},restored.version);
         if(!p.name||!urlFor(p.article,'article'))return false;
         state=restored;person=p;recordHash='';
-        if(restored.version===4){
+        if(restored.lifeMode){
+          prospect=data.prospect;lifeCursor=data.cursor||null;
+        }else if(restored.version===4){
           const saved=data.phase;
           const ordinary=['dawn','clash','bulletin','decision'];
           if(restored.status!=='playing')catPhase=saved==='night'?'night':'result';
@@ -549,11 +623,16 @@
         }
         campaign(false);return true;
       }
+      if(key===lifeKey){
+        if(!Number.isInteger(data.prospect?.seed)||!data.prospect.origin)return false;
+        prospect=data.prospect;
+      }
       if(Array.isArray(data.hand)&&data.hand.length){
         const version=versionFor(key);
         hand=data.hand.slice(0,10).map(serialPerson).map(p=>displayPerson({...byKey.get(String(p.id)),...p},version)).filter(p=>p.name&&urlFor(p.article,'article'));
         if(hand.length){paintDraft(false);return true;}
       }
+      if(key===lifeKey&&prospect){show('front',false);entry.record(prospect,entryHooks);return true;}
     }catch {}
     return false;
   }
@@ -564,13 +643,14 @@
   function toFront(erase=false){
     token++;window.SummonCeremony?.cancel?.();shared=false;state=null;person=null;hand=[];clearHash();$('status').textContent='';
     if(erase)try{localStorage.removeItem(currentSaveKey);}catch{}
-    currentSaveKey=storageKey;catPhase='dawn';recordHash='';
+    currentSaveKey=lifeKey;catPhase='dawn';recordHash='';prospect=null;lifeCursor=null;
     show('front');
+    entry.home(entryHooks);
     previousRun();
   }
   function previousRun(){
     const host=$('previous-runs');host.replaceChildren();
-    for(const key of [thirdKey,secondKey,legacyKey]){
+    for(const key of [storageKey,thirdKey,secondKey,legacyKey]){
       const saved=readSave(key);
       if(!saved?.state&&!saved?.hand?.length)continue;
       const button=el('button','old-run',saved.state?'旧版の記録を開く · '+(saved.person?.name||'相棒')+'／第'+saved.state.day+'日':'以前の召喚候補を開く');
@@ -578,9 +658,10 @@
     }
   }
   function rules(){
-    const version=state?.version||versionFor(currentSaveKey);
-    const activeRules=version===4?cat:version===3?frontier:engine;
-    const list=[...(activeRules?.rules?.()||['相棒と契約し、毎日三つの行き先から一つを選びます。']), '実在の人物は英霊、物語や伝説の人物は幻霊、古代の神は神霊。古い時代の相棒ほど戦闘に強くなる傾向があります。'];
+    const version=state?.lifeMode?5:state?.version||versionFor(currentSaveKey);
+    const activeRules=version===5?life:version===4?cat:version===3?frontier:engine;
+    const daily=version===5?['日誌の時計が進むと決断が訪れます。「次の決断へ」で、そこまでの出来事をまとめて読めます。','決断の場で自分の生命力をサーヴァントに渡すと、NPが増えます。生命力が減った分、その後のあなたの生存率は下がります。','NPが100%に達したら、宝具を使う日を選べます。その日の行動を選ぶまでに発動してください。']:activeRules?.rules?.()||[];
+    const list=[...daily,'実在の人物は英霊、物語や伝説の人物は幻霊、古代の神は神霊。古い時代の相棒ほど戦闘に強くなる傾向があります。'];
     $('rule-list').replaceChildren(...list.map(t=>el('li','',t)));
     const previous=$('reset-run');if(previous)previous.remove();
     if((view==='campaign'||view==='draft')&&!shared){
@@ -590,8 +671,12 @@
     }
     if(typeof $('rules').showModal==='function')$('rules').showModal();else $('rules').setAttribute('open','');
   }
-  $('draw').onclick=draw;$('draw-retry').onclick=draw;$('open-rules').onclick=rules;
-  $('again').onclick=()=>{if(shared&&readSave(storageKey)){toFront();resume(storageKey);}else{toFront(!shared&&currentSaveKey===storageKey);draw();}};
+  $('draw').onclick=birth;$('draw-retry').onclick=draw;$('open-rules').onclick=rules;
+  $('again').onclick=()=>{
+    const own=ownRecordKey();
+    if(own){toFront();resume(own);return;}
+    toFront(!shared&&currentSaveKey===lifeKey);birth();
+  };
   async function copyRecord(host){
     const status=host instanceof HTMLElement?host:$('share-status');
     const value=shareMessage+'\n'+shareURL;
@@ -602,13 +687,13 @@
   async function boot(){
     const hash=location.hash;
     if(hash.length<=1800 && /^#r2\.(?:[hf][0-9a-z]{1,7}|wQ[1-9]\d{0,9})\.[0-9a-z]{1,5}\.[0-9a-z]{1,7}(?:\.[A-Za-z0-9_-]{1,1600})?$/.test(hash)){const archive=new URL('record.html',location.href);archive.hash=hash;location.replace(archive.href);return;}
-    if(/^#sv[1234]\./.test(hash)){
+    if(/^#sv[12345]\./.test(hash)){
       if(await replay(hash))return;
       $('status').textContent='この共有記録を読み込めませんでした。';
     }
     shared=false;
-    if(!resume(storageKey)){show('front',false);previousRun();}
+    if(!resume(lifeKey)){currentSaveKey=lifeKey;show('front',false);entry.home(entryHooks);previousRun();}
   }
-  window.addEventListener('hashchange',()=>{if(/^#sv[1234]\./.test(location.hash))boot();});
+  window.addEventListener('hashchange',()=>{if(/^#sv[12345]\./.test(location.hash))boot();});
   boot();
 })();
