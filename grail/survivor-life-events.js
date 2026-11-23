@@ -72,10 +72,12 @@
     const [name,kind,description]=powerOf({hero});
     return {name,kind,description};
   }
-  function start(hero,roster,seed,cast,playerName){
+  function start(hero,roster,seed,cast,playerName,causalWar=true){
     const s=world.start(hero,roster,seed,cast);s.lifeMode=true;
+    if(causalWar)s.causalWar=true;
     if(typeof playerName==="string")s.playerName=Array.from(playerName.trim()).slice(0,32).join("");
     const p=profile(s);
+    if(causalWar)s.bond={...s.bond,opening:"午前零時、"+p.country+"。"+p.place+"で初めて会った"+s.hero.name+"が、あなたの名前を尋ねた。"};
     s.life={vitality:100,np:30,power:null,commands:[],choices:[],memories:[],last:null,
       contact:{name:p.person,relation:p.relation,status:"別行動"},crew:0,supplies:1,signal:false,shelter:false,
       book:false,trail:false,jobDone:false};
@@ -90,13 +92,19 @@
     const expectedSaved=info?.expectedSaved??0;
     const penalty=info?.penalty??Math.round((100-l.vitality)/5);
     const canSupply=isLive&&!active&&gain>0&&l.vitality>cost;
-    const canRelease=isLive&&!active&&l.np===100;
-    const effect="今回の生存率を最大"+boost[0]+"ポイント、行動の成功率を最大"+boost[1]+"ポイント上げる。"+
+    const hasTarget=!s.causalWar||info?.canAffect===true;
+    const canRelease=isLive&&!active&&l.np===100&&hasTarget;
+    let effect="今回の生存率を最大"+boost[0]+"ポイント、行動の成功率を最大"+boost[1]+"ポイント上げる。"+
       (expectedSaved>0?"救援先は"+info.targetName+"。":"");
-    const reason=!isLive?"契約は終了した。":active?"この日の宝具は発動済み。":l.np===100?"NPが満ちた。":l.vitality<=cost?"生命力が足りない。":"";
+    if(s.causalWar){
+      if(!isLive)effect="";
+      else if(!hasTarget)effect="今いる場所に宝具で防ぐ危険はない。貯めたNPはそのまま持ち越せる。";
+      else effect=info.targetName+"にいる間、"+({combat:"敵の攻撃を迎え撃つ。",shelter:"迫る危険から身を守る。",rescue:"危険にさらされた人を避難させる。"}[kind])+"力が届く範囲はこの戦域まで。";
+    }
+    const reason=!isLive?"契約は終了した。":active?"この日の宝具は発動済み。":s.causalWar&&l.np===100&&!hasTarget?"この場は安全。NPは100%のまま持ち越せる。":l.np===100?"NPが満ちた。":l.vitality<=cost?"生命力が足りない。":"";
     return {vitality:l.vitality,np:l.np,cost,gain,afterVitality:l.vitality-cost,afterNP:l.np+gain,canSupply,canRelease,
       ability,description,kind,effect,active:!!active,reason,penalty,afterPenalty:Math.round((100-l.vitality+cost)/5),
-      survivalBoost:boost[0],successBoost:boost[1],targetName:info?.targetName||"",expectedSaved};
+      survivalBoost:hasTarget?boost[0]:0,successBoost:hasTarget?boost[1]:0,targetName:info?.targetName||"",expectedSaved};
   }
   function memory(day,minute,kind,title,text,extra) {
     return {day,minute,time:clock(minute),kind,title,text,...extra};
@@ -145,9 +153,9 @@
         choices:[a("親子が会える場所をつくる","shelter","入口の紙に名前を書いた。夕方、一人で立っていた人に小さな手が重なった。"),a("名簿の家族を連れて渡る","crew","紙はもう、誰かがいなくなった記録だけではなかった。行き先を書き足して歩いた。"),a("届いた名前を各地に読み上げる","network","途中から家族自身がマイクに向かった。聞いている子にしか分からない呼び名が、遠くへ届いた。")]},
       watch:{title:"今夜の当番表",text:"一緒に来た"+s.life.crew+"人が、空箱を机の代わりにして座っていた。「二人だって、一晩くらい休めるでしょう」。",
         choices:[a("仲間に当番を頼んで休む","rest","人の寝息を聞きながら眠った。目を開けると"+h+"の隣の当番が交代していた。"),a("物を運べる人と食糧を取りに渡る","stock","交代で荷物を担いだ。次の夜の食事を、みんなで少しずつ持ち帰れた。"),a("当番をつないで各地の通信を支える","network","一人が疲れたら次の人が応答した。空箱を囲んだ人たちの声が、朝まで途切れなかった。")]},
-      close:{title:"二人分の脈",text:h+"があなたの手首に指を当てた。今夜、地上に残るのは二人だけだ。最後に何を持っていくか。",
-        choices:[a("手を握ったまま世界が閉じるのを待つ","end","触れている指が、まだ温かかった。"),a("昨日までの道を最後まで歩く","end","ここまで通ってきた場所の名を、二人で交互に呼んだ。"),a("残るすべての回線で一度だけ呼ぶ","end","回線が閉じる寸前に、あなたたちの呼びかけが世界を一周した。")]},
-      final:{title:"もう一人のマスター",text:"あと一人。相手の傍らには"+s.champion.name+"がいる。"+h+"は命令を待っている。",
+      close:{title:"二人分の脈",text:s.causalWar?f.local.a.name+"と"+f.local.b.name+"の交戦が各地に広がっている。"+h+"はあなたの手を取り、避難先を指した。":h+"があなたの手首に指を当てた。今夜、地上に残るのは二人だけだ。最後に何を持っていくか。",
+        choices:[a(s.causalWar?"相棒と避難して戦闘をやり過ごす":"手を握ったまま世界が閉じるのを待つ","end","触れている指が、まだ温かかった。"),a("昨日までの道を最後まで歩く","end","ここまで通ってきた場所の名を、二人で交互に呼んだ。"),a("残るすべての回線で一度だけ呼ぶ","end","回線が閉じる寸前に、あなたたちの呼びかけが世界を一周した。")]},
+      final:{title:"もう一人のマスター",text:"あと一人。相手の傍らには"+s.champion.name+"がいる。"+h+(s.causalWar?"があなたの隣に立つ。":"は命令を待っている。"),
         choices:[a("相棒に背中を預ける","end","あなたの背中に"+h+"の手があった。"),a("二人の世界の境を越える","end","向こう側に着いて振り向くと、二人でつけた足跡だけが残っていた。"),a("相手のマスターに最後の声を届ける","end","こちらから呼んだ声は、相手にも確かに届いた。")]}
     };
   }
@@ -220,8 +228,11 @@
     const choices=world.options(s).map((o,i)=>{
       const option=scene.choices[i],heal=Math.min(100-l.vitality,l.supplies>0?12:4);
       const target=option.mark==="rest"?(l.supplies>0&&heal>0?"食糧1を使い、":"")+ (heal?"生命力"+heal+"回復":"生命力は満タン"):bonuses[option.mark];
-      return {...o,index:i,title:option.title,detail:(o.routeType==="move"&&o.destination!==s.region?o.destinationName+"へ移動。":"")+target,
+      const crossing=o.routeType==="move"&&o.destination!==s.region;
+      const choice={...o,index:i,title:option.title,detail:(crossing?o.destinationName+"へ移動。":"")+target,
         mark:option.mark,consequence:option.done};
+      if(s.causalWar)choice.riskText=o.threat?.warning||(crossing?"ここから"+o.destinationName+"までの道は安全。":"ここにいる二人には、今夜の戦闘は届かない。");
+      return choice;
     });
     return {id,day:d,minute,time:clock(minute),title:scene.title,text:scene.text,events,choices,frame:f,context:kind};
   }
@@ -244,6 +255,30 @@
       case "book":l.book=true;break;
     }
   }
+  function personalOutcome(s,option,row){
+    if(!row.alive)return row.deathCause;
+    const h=s.hero.name,l=s.life;
+    if(row.day>=s.deadline-1)return row.powerRescueText?row.personal.replace(" "+row.powerRescueText,""):row.personal;
+    if(row.success)return option.consequence;
+    if(option.mark==="meet")return l.contact.name+"との待ち合わせは果たせなかった。あなたと"+h+"は一緒に夜を越した。";
+    if(option.mark==="rest")return "夜までに交代の人が来ず、ゆっくり休めなかった。";
+    if(option.mark==="signal"||option.mark==="network")return "最後まで返事はなかった。"+h+"と二人、無事を伝える言葉を紙に残した。";
+    if(option.mark==="stock")return "空の荷車を元に戻した。持ち帰れる食糧は残っていなかった。";
+    if(option.mark==="crew"||option.mark==="trail")return "あなたと"+h+"は"+option.destinationName+"に着いた。待ち合わせの人を捜したが、日が暮れるまで会えなかった。";
+    if(option.mark==="book")return "紙には名前だけが残っていた。持ち主を見失い、行き先を聞けないまま夜になった。";
+    if(option.mark==="shelter")return "あなたと"+h+"は夜を越した。けれど人を迎える場所を整える前に、皆それぞれ別の道を選んだ。";
+    return "仕事場を訪ねたけれど、顔見知りには会えなかった。"+h+"と二人で戸締まりをした。";
+  }
+  function savedByPartner(s,row){
+    const h=s.hero.name,t=row.threat;
+    if(!t||!row.powerPreventedDeath)return "";
+    const warning=t.kind==="duel"?t.attacker.name+"の攻撃":t.attacker.name+"たちの交戦の余波";
+    if(h==="夏目漱石")return h+"が「"+row.powerName+"」で猫の目を借り、"+t.shelter+"への抜け道を見つけた。あなたはそこへ逃れて助かった。";
+    if(h==="葛飾北斎")return h+"の版画から抜け出した舟に飛び乗った。舟が二人を乗せて滑り出し、"+warning+"の及ぶ範囲を抜けた。";
+    if(h==="イーロン・マスク")return "途切れていた地上の回線に月経由で返事が来た。"+h+"は届いた避難先まであなたを連れ、"+warning+"をかわした。";
+    if(h==="インドラ"||h==="ポセイドーン")return h+"が「"+row.powerName+"」で道を開いた。"+(h==="インドラ"?"稲妻がふたつに割れた間":"波が左右に引いた間")+"にあなたは走り抜け、"+warning+"をかわした。";
+    return row.powerRescueText;
+  }
   function resolve(s,input){
     const ep=episode(s);if(!ep)throw Error("この契約はすでに終了しています。");
     const o=typeof input==="number"?ep.choices[input]:ep.choices.find(v=>v.id===input);
@@ -256,7 +291,10 @@
       l.contact={...l.contact,status:"死亡"};l.crew=0;
     }
     let text;
-    if(!row.alive)text=row.killer?.kind==="condition"?row.personal:row.killer?.name ? row.killer.name+"の顕現が届いた。"+s.hero.name+"の手を握ったところで、あなたの令印は消えた。":
+    if(s.causalWar){
+      const saved=savedByPartner(s,row);
+      text=(saved?saved+" ":"")+personalOutcome(s,o,row);
+    }else if(!row.alive)text=row.killer?.kind==="condition"?row.personal:row.killer?.name ? row.killer.name+"の顕現が届いた。"+s.hero.name+"の手を握ったところで、あなたの令印は消えた。":
       "声を掛けようとした先に、"+s.hero.name+"の手があった。あなたの令印はそこで消えた。";
     else if(!row.success)text="「"+o.title+"」。"+s.hero.name+"と"+(row.from!==row.region?o.destinationName+"まで渡った":"踏み出した")+"けれど、当てにしていた返事は来なかった。二人で夜を越すだけで精いっぱいだった。";
     else text=o.consequence;
@@ -266,7 +304,8 @@
       text+=" 宝具「"+row.powerName+"」が"+area+"で"+fmt(row.powerSaved)+"人を救った。";
     }
     const minute=Math.min(1428,Math.max(1081+roll(s.seed,ep.day,"dusk")%190,ep.minute+18+roll(s.seed,ep.day,"result")%55));
-    const note=memory(ep.day,minute,"outcome",row.alive?o.title:"あなたの契約が終わった",text,{population:row.active,choice:o.title,alive:row.alive});
+    const note=memory(ep.day,minute,"outcome",row.alive?o.title:s.causalWar?profile(s).name+"の最期":"あなたの契約が終わった",text,{population:row.active,choice:o.title,alive:row.alive});
+    if(s.causalWar){note.threat=o.threat;note.cause=row.alive?null:row.deathCause;}
     // Power operations are recorded while the live decision is open. Insert
     // newly settled daylight entries by clock, keeping earlier transfers in order.
     const today=prior.memories.filter(m=>m.day===ep.day);
@@ -274,7 +313,7 @@
     if(ep.minute<720 && ep.frame.noonDeaths>0)all.push(memory(ep.day,720,"world","正午の世界通信",
       "開戦"+ep.day+"日目の正午。世界の生存者は"+fmt(ep.frame.active)+"人。",{population:ep.frame.active}));
     if(ep.day===s.deadline-1&&row.alive)all.push(memory(ep.day,minute,"personal",pactName(l)+"との通信が途絶えた",
-      "二つだけ残った令印のどちらにも、"+pactName(l)+"の名はなかった。"));
+      s.causalWar?"最後に残った二人のマスターの名が読み上げられた。その中に"+pactName(l)+"はいなかった。":"二つだけ残った令印のどちらにも、"+pactName(l)+"の名はなかった。"));
     all.sort((a,b)=>a.minute-b.minute);
     l.memories=[...prior.memories.filter(m=>m.day!==ep.day),...all];
     l.last=note;
@@ -286,7 +325,7 @@
     const d=typeof raw==="string"?JSON.parse(raw):raw;
     const commands=d?.life?.commands||d?.commands;
     if(!d?.hero||!Array.isArray(commands)||commands.length>96)throw Error("契約記録を復元できません。");
-    let s=start(d.hero,roster||g.SurvivalRoster,d.seed,d.cast,d.playerName);
+    let s=start(d.hero,roster||g.SurvivalRoster,d.seed,d.cast,d.playerName,d.causalWar===true);
     for(const c of commands){
       if(c==="s")s=supply(s);else if(c==="r")s=release(s);else if(Number.isInteger(c)&&c>=0&&c<=2)s=resolve(s,c);
       else throw Error("不明な契約操作です。");

@@ -199,7 +199,11 @@
       release.disabled=!m.canRelease;release.classList.add('gl-release');
       if(m.canRelease)release.classList.add('gl-charged');
       actions.append(add,release);box.append(actions);
-      const preview=m.canSupply?'供給後　生命力 '+m.afterVitality+' ／ NP '+m.afterNP+'%　'+(Number.isFinite(m.afterPenalty)?'消耗による生存率低下 '+m.afterPenalty+'pt':''):m.canRelease?'NPは満タン。今使うか、次の決断へ持ち越せます。':m.reason||'';
+      let preview=m.reason||'';
+      if(m.canSupply){
+        preview='供給後　生命力 '+m.afterVitality+' ／ NP '+m.afterNP+'%';
+        if(!c.state.causalWar && Number.isFinite(m.afterPenalty))preview+='　消耗による生存率低下 '+m.afterPenalty+'pt';
+      }else if(m.canRelease)preview='NPは満タン。今使うか、次の決断へ持ち越せます。';
       if(preview)box.append(node('p','gl-supply-note',preview));
     }
     const effect=disclosure((m.active?'発動中　':'宝具　')+val(m.ability,'契約した英霊の宝具'),'gl-ability');
@@ -217,12 +221,19 @@
     c.dilemma.append(label,heading);
     if(ep.text)c.dilemma.append(node('p','gl-prompt-text',ep.text));
     const options=node('div','gl-options');
+    const causal=c.state.causalWar===true;
+    const sharedRisk=causal && ep.choices[0]?.riskText && ep.choices.every(o=>o.riskText===ep.choices[0].riskText)?ep.choices[0].riskText:'';
+    if(sharedRisk)c.dilemma.append(node('p','gl-scene-risk',sharedRisk));
     for(const [i,choice] of ep.choices.entries()) {
       const idx=Number.isInteger(choice.index)?choice.index:i;
       const b=btn('',null,()=>command(c,()=>c.hooks.choose(idx)));b.className='gl-choice';b.dataset.lifeChoice=String(idx);
       const title=node('span','gl-choice-title',choice.title),detail=node('span','gl-choice-detail',choice.detail||choice.description||'');
-      const rate=choice.forecast?.survival,estimate=Number.isFinite(rate)?node('small','gl-odds','生存 '+rate+'%'):null;
-      b.append(title);if(estimate)b.append(estimate);if(detail.textContent)b.append(detail);options.append(b);
+      const rate=choice.forecast?.survival;
+      const safe=causal && !choice.threat && rate===100;
+      const estimate=Number.isFinite(rate)?node('small','gl-odds',safe?'安全':'生存 '+rate+'%'):null;
+      b.append(title);if(estimate)b.append(estimate);
+      if(causal && !sharedRisk && choice.riskText)b.append(node('span','gl-choice-risk'+(safe?' is-safe':''),choice.riskText));
+      if(detail.textContent)b.append(detail);options.append(b);
     }
     c.dilemma.append(c.mana,options);
   }
@@ -295,10 +306,11 @@
     c.toolbar.replaceChildren(node('span','gl-dayno','第'+state.day+'日'),node('strong','gl-end-rank',fmt(state.rank)+'位'));
     const win=state.status==='won';
     const exit=node('article','gl-exit');
-    exit.append(node('span','gl-label','80億人のうち'),node('h3','',win?'最後の一人として、生き残った。':state.hero.name+'との契約が終わった。'));
+    const title=win?'最後の一人として、生き残った。':state.causalWar?(state.playerName||p.name)+'は命を落とした。':state.hero.name+'との契約が終わった。';
+    exit.append(node('span','gl-label','80億人のうち'),node('h3','',title));
     const last=state.life?.last||{};
     if(last.text)exit.append(node('p','',last.text));
-    const killer=state.last?.killer?.name;
+    const killer=!state.causalWar&&!win?state.last?.killer?.name:null;
     exit.append(textRows([['生存日数',state.day+'日'],['その時の世界',fmt(state.activeAtExit)+'人が生存'],['直接撃破',fmt(state.kills)+'人'],['最期の相手',killer],['救った人数','延べ'+fmt(state.saved)+'人']]));
     if(win&&end?.wish)exit.append(node('blockquote','gl-wish','「'+end.wish+'」'));
     c.primary.replaceChildren(exit);

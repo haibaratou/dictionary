@@ -165,7 +165,7 @@
     if(day===s.deadline-1){
       const last=events.slice().sort((a,b)=>b.mortality-a.mortality)[0];
       last.global=true;last.reach=1;last.footprint=occupied.map(r=>r.id);
-      last.detail+=" 聖杯の外縁が砕け、この交戦の波が最後の世界結界を通って全地域に同時到達した。";
+      last.detail+=s.causalWar===true?" この戦いの余波が、今夜はすべての戦域に及ぶ。":" 聖杯の外縁が砕け、この交戦の波が最後の世界結界を通って全地域に同時到達した。";
       last.fallout=last.detail;
     }
     return events;
@@ -250,6 +250,13 @@
       value.context={kind,region:home.id,regionName:home.name,battleArea:local.area,battleAreaName:local.areaName,
         localDeaths:home.noonDeaths,localEveningBase:home.eveningBase};
     }
+    if(s.causalWar===true){
+      if(close)value.phase="全域に及ぶ災厄";
+      if(final){
+        value.phase="最後の対決";
+        value.body=local.a.name+"と"+local.b.name+"の最終戦。マスターは世界に二人だけ残っている。";
+      }
+    }
     frames.set(s,{watch,value});return value;
   }
   function observe(s){return s.status==="playing"?frame(s,false):null;}
@@ -258,6 +265,35 @@
     shelter:{bonusSurvival:22,bonusSuccess:15,rescueFraction:.023},
     rescue:{bonusSurvival:18,bonusSuccess:19,rescueFraction:.045}
   };
+  const hazards={
+    flood:["高潮が建物の上階まで押し寄せる","押し寄せた水にのまれ、溺死した","水の届かない高所"],
+    storm:["落雷が相次いでいる","すぐ近くに落ちた雷に打たれ、死亡した","落雷の届かない避難所"],
+    heat:["熱波が通りを焼いている","逃げ道をふさいだ炎に巻き込まれ、死亡した","熱波の届かない地下室"],
+    rupture:["地割れが建物を倒している","崩れた建物の下敷きになり、死亡した","倒壊した建物から離れた広場"],
+    dark:["暗闇が迫り、中に入った人の呼吸が止まっている","暗闇に追いつかれ、呼吸が止まって死亡した","まだ光の残る一角"],
+    echo:["時間が止まる範囲が広がっている","時間の止まった区画に閉じ込められ、心臓が止まって死亡した","時計の針がまだ動く通り"],
+    frost:["氷の波が町を覆い始めた","押し寄せた氷に閉じ込められ、凍死した","氷がまだ届いていない丘"],
+    ash:["空から落ちる灼けた灰が街を埋めている","熱い灰にのまれ、死亡した","灰の降らない地下道"]
+  };
+  function threatFor(s,f,target,route){
+    const final=f.day===s.deadline,close=f.day===s.deadline-1;
+    if(!final&&!close&&(!target.affected||!target.eveningBase))return null;
+    const event=final?f.battles[0]:f.battles.find(b=>b.area===target.credit);
+    if(!event)throw Error("危険の発生源が不明です。");
+    const encounter=route==="intervene"&&event.area===target.id&&!event.isAftershock&&f.day>2&&
+      dice(s.seed,f.day,"duel")<(f.day-2)/(s.deadline-2)*.85;
+    const duel=final||(!close&&encounter);
+    const kind=duel?"duel":close?"collapse":event.isAftershock?"aftershock":"clash";
+    const attacker=final?s.champion:event.a,opponent=final?s.hero:event.b;
+    const [danger,fatal,shelter]=hazards[event.family];
+    const pair=event.a.name+"と"+event.b.name;
+    const source=close?pair+"の交戦が全域に広がり、"+target.name+"も直撃を受けた。":
+      event.isAftershock?"第"+event.originDay+"日の"+pair+"の交戦から遅れて、余波が"+target.name+"に到達した。":
+      target.id===event.area?target.name+"で"+pair+"が交戦している。":pair+"の交戦の余波が"+target.name+"に達した。";
+    const warning=(duel?target.name+"で"+attacker.name+"があなたのいる場所を攻撃する。":source)+danger+"。";
+    const death=duel?target.name+"で"+attacker.name+"の攻撃を受け、あなたは"+fatal+"。":source+"あなたは"+fatal+"。";
+    return {kind,area:target.id,areaName:target.name,battleId:event.id,attacker,opponent,family:event.family,warning,death,shelter};
+  }
   function masterPenalty(s){return Math.round((100-clamp(Number(s.life?.vitality??100),0,100))/5);}
   function released(s,day){const p=s.life?.power;return s.lifeMode===true&&p?.day===day&&Object.hasOwn(releases,p.kind)?p:null;}
   function powerInfo(s,kind){
@@ -265,8 +301,13 @@
     const f=frame(s,false),key=kind||released(s,f.day)?.kind,p=Object.hasOwn(releases,key)?releases[key]:null;
     if(!p)return null;
     const home=f.regions.find(r=>r.id===s.region);
-    const target=home.eveningBase>0?home:f.regions.reduce((a,r)=>r.eveningBase>a.eveningBase?r:a,home);
+    const target=s.causalWar===true||home.eveningBase>0?home:f.regions.reduce((a,r)=>r.eveningBase>a.eveningBase?r:a,home);
     const expectedSaved=f.day>=s.deadline-1?0:Math.min(target.eveningBase,Math.ceil(target.eveningBase*p.rescueFraction*(1+s.hero.strength/100)));
+    if(s.causalWar===true){
+      const canAffect=home.eveningBase>0||f.day>=s.deadline-1;
+      return {canAffect,bonusSurvival:canAffect?p.bonusSurvival:0,bonusSuccess:canAffect?p.bonusSuccess:0,
+        penalty:masterPenalty(s),target:target.id,targetName:target.name,expectedSaved};
+    }
     return {bonusSurvival:p.bonusSurvival,bonusSuccess:p.bonusSuccess,penalty:masterPenalty(s),
       target:target.id,targetName:target.name,expectedSaved};
   }
@@ -301,6 +342,10 @@
       ["move","二つ目の地平へ踏み出す","崩れ落ちる二つの世界の間を渡る。同行した人たちから受け取った道の記憶を使う。","移動と同行の記憶で最後の一人を目指す",origin],
       ["intervene",soft?"最後の一言を敵陣へ送る":"最後の顕現を相棒に託す",soft?enemy+"のマスターへ、世界を巻き込む顕現をともに止めようと呼びかける。":enemy+"との一騎打ちに最後の令印を使う。","最後の契約と正面から向き合う",origin]
     ];
+    if(final&&s.causalWar===true){
+      definitions[0]=["protect","相棒の守りに入る",enemy+"の攻撃を相棒と一緒にしのぐ。","相棒と身を守る",origin];
+      definitions[2]=["intervene",soft?"相手のマスターに停戦を呼びかける":"正面から最後の戦いに応じる",enemy+"のマスターと同じ戦場に立つ。","最後の対決に臨む",origin];
+    }
     return definitions.map(([routeType,baseTitle,description,reward,target],i)=>{
       const qualified=skill.routeType===routeType,prior=s.history.filter(r=>r.routeType===routeType).length;
       if(i===1&&!final&&!penultimate)description+=target.affected?(target.epicentre?"渡った先も交戦中。":"渡った先には域外からの余波が届いている。"):"渡った先では新たな災厄は観測されていない。";
@@ -318,8 +363,14 @@
       p+=clamp((s.hero.strength-30)/70,0,1)*(.012+danger*.059);
       if(qualified)p+=skill.bonus/100;
       const power=released(s,day),effect=power?releases[power.kind]:null;
-      const survival=clamp(Math.round(p*100)+(effect?.bonusSurvival||0)-(s.lifeMode===true?masterPenalty(s):0),1,96);
-      const success=final?survival:clamp(Math.round((i===0?.70:i===1?.72:.53)*100+s.allies*2+(qualified?12:0)+(s.health-2)*3)+(effect?.bonusSuccess||0),35,95);
+      const causal=s.causalWar===true;
+      const threat=causal?threatFor(s,f,target,routeType):null;
+      const atThreat=!!threat&&target.id===s.region;
+      const boost=effect&&(!causal||atThreat)?effect:null;
+      const baseSurvival=Math.round(p*100)-(s.lifeMode===true?masterPenalty(s):0);
+      const survival=causal&&!threat?100:clamp(baseSurvival+(boost?.bonusSurvival||0),1,96);
+      const baseSuccess=Math.round((i===0?.70:i===1?.72:.53)*100+s.allies*2+(qualified?12:0)+(s.health-2)*3);
+      const success=final?survival:clamp(baseSuccess+(boost?.bonusSuccess||0),35,95);
       const roleTitle=i===2&&soft&&!final&&!penultimate?({
         writer:"災厄を止める一行を届ける",artist:"敵味方の空に同じ絵を描く",musician:"双方が聴ける一音を送る",
         healer:"両陣営に救命の刻限を告げる",scientist:"二つの現象の周期を揃える",inventor:"相棒と遠隔の応答器を鳴らす",
@@ -328,9 +379,15 @@
       const id=(final?"final":penultimate?"last":local.family)+"-"+["hold","cross","answer"][i];
       const fitted=g.SurvivalCatPowers?.response?.(s.hero,local,routeType);
       const quick=!final&&!penultimate&&fitted?String(fitted):"";
-      return {id,title:roleTitle||baseTitle,description,hook:quick,routeType,destination:target.id,destinationName:target.name,
+      const o={id,title:roleTitle||baseTitle,description,hook:quick,routeType,destination:target.id,destinationName:target.name,
         forecast:{survival,success,originMortality:Math.round(originRisk*100),destinationMortality:Math.round(destRisk*100),
           globalMortality:Math.round(globalDanger*100)},risk:100-survival,reward,consequence:description,skill:qualified?skill:null};
+      if(causal){
+        o.threat=threat;
+        o.forecast.powerSurvivalBonus=atThreat?survival-clamp(baseSurvival,1,96):0;
+        o.forecast.powerSuccessBonus=final?o.forecast.powerSurvivalBonus:success-clamp(baseSuccess,35,95);
+      }
+      return o;
     });
   }
   function protection(s,o,f,success){
@@ -353,7 +410,8 @@
     const enemy=local.a.name===s.hero.name?local.b:local.a;
     const playerDeaths=!watch&&!alive?1:0;
     const encounter=s.lifeMode===true?Math.max(0,(day-2)/(s.deadline-2))*.85:.18;
-    const direct=!!choice&&alive&&success&&choice.routeType==="intervene"&&(!peaceful.has(s.hero.role)||power?.kind==="combat")&&(final||(!close&&dice(s.seed,day,"duel")<encounter));
+    const fought=s.causalWar===true?choice?.threat?.kind==="duel":final||(!close&&dice(s.seed,day,"duel")<encounter);
+    const direct=!!choice&&alive&&success&&choice.routeType==="intervene"&&(!peaceful.has(s.hero.role)||power?.kind==="combat")&&fought;
     const duelDeaths=direct?1:0;
     const beforeRegions=f.regions.map(r=>({...r,incoming:moved&&r.id===region?1:0,outgoing:moved&&r.id===original?1:0}));
     let finalistArea=s.finalRegion;
@@ -366,7 +424,7 @@
     // untouched. A personal incident is separate from the foreign headline.
     const quiet=s.lifeMode===true&&!toRegion.affected&&!final&&!close;
     const personalCause={id:"contract-failure",name:"令印の消失",kind:"condition",role:"cause"};
-    if(quiet&&(playerDeaths||duelDeaths)){
+    if(s.causalWar!==true&&quiet&&(playerDeaths||duelDeaths)){
       const title=playerDeaths?"当地で一組の契約が消失":"二組の契約が遭遇";
       const fighting=new Set(f.battles.flatMap(b=>[b.a.name,b.b.name]));
       const visitor=s.cast.find(h=>h.name!==s.champion.name&&!fighting.has(h.name))||enemy;
@@ -411,17 +469,26 @@
     });
     if(s.lifeMode===true)saved=ordinarySaved+powerSaved;
     const active=sum(ledger,r=>r.after),deaths=s.active-active,eveningDeaths=deaths-f.noonDeaths;
-    const exitEnemy=final?s.champion:quiet?personalCause:enemy;
+    const exitEnemy=s.causalWar===true&&choice?choice.threat?.attacker:final?s.champion:quiet?personalCause:enemy;
     const namedCasualties=[];
     if(playerDeaths)namedCasualties.push({name:"あなた",hero:s.hero,killer:exitEnemy,region,kind:"master"});
     if(final&&(watch||alive))namedCasualties.push({name:(watch?f.local.a.name:s.champion.name)+"のマスター",hero:watch?f.local.a:s.champion,killer:direct?s.hero:null,region:watch?otherArea:finalistArea,kind:"master"});
+    if(s.causalWar===true){
+      if(playerDeaths)namedCasualties[0].cause=choice.threat.death;
+      if(final&&(watch||alive)){
+        const defeated=watch?f.local.a:s.champion,other=watch?s.champion:s.hero;
+        namedCasualties.at(-1).cause=direct?other.name+"との最終戦で、"+defeated.name+"のマスターが死亡した。":
+          "最終戦で"+hazards[f.local.family][0]+"。"+defeated.name+"のマスターは"+hazards[f.local.family][1]+"。";
+      }
+    }
     const health=watch?s.health:!alive?0:clamp(s.health+(success?(choice.routeType==="protect"?1:choice.routeType==="intervene"&&!final?-1:0):-1),1,4);
     const allies=watch?s.allies:clamp(s.allies+(success&&choice.routeType!=="intervene"&&!close&&!final?1:0),0,8);
     const headline=branch.slice().sort((a,b)=>b.deaths-a.deaths)[0];
     const news=final?"世界最後の交戦が終わった。人類の生存者は一人。":headline.phenomenon+"。この交戦と周辺への波及で"+fmt(headline.deaths)+"人が死亡した。";
     let personal="";
     if(choice){
-      if(!alive)personal=final?exitEnemy.name+"の顕現が最後の結界に達した。あなたの令印は消え、"+s.hero.name+"が手を握ったまま、二人の契約は終わった。":s.hero.name+"と「"+choice.title+"」を試みた。"+(moved&&!toRegion.affected?"渡り道まで追ってきた":atlas[region].name+"に届いた")+exitEnemy.name+"の顕現に巻き込まれ、あなたはその日の夜を迎えられなかった。";
+      if(!alive&&s.causalWar===true)personal=choice.threat.death;
+      else if(!alive)personal=final?exitEnemy.name+"の顕現が最後の結界に達した。あなたの令印は消え、"+s.hero.name+"が手を握ったまま、二人の契約は終わった。":s.hero.name+"と「"+choice.title+"」を試みた。"+(moved&&!toRegion.affected?"渡り道まで追ってきた":atlas[region].name+"に届いた")+exitEnemy.name+"の顕現に巻き込まれ、あなたはその日の夜を迎えられなかった。";
       else if(final)personal=direct?s.hero.name+"が最後の対決に応えた。"+s.champion.name+"のマスターが倒れ、あなたの鼓動だけが残った。":s.hero.name+"と最後まで互いの名を呼んだ。反対側の契約者は残響に呑まれ、あなたは誰にも最後の一撃を加えずに生き残った。";
       else if(close)personal="「"+choice.title+"」。"+s.hero.name+"があなたの手を離さなかった。世界中で二つだけになった鼓動の、一つが自分の胸にある。";
       else if(!success)personal=s.hero.name+"と"+(moved?atlas[region].name+"へ渡った":"その場を持ちこたえた")+"。けれど「"+choice.title+"」は最後まで届かず、二人は傷を負って夜を迎えた。";
@@ -429,8 +496,11 @@
       else if(choice.routeType==="protect")personal=s.hero.name+"と「"+choice.title+"」。"+fmt(saved)+"人が今夜を越えた。声を掛け合う人たちの輪の中で、二人も息をつけた。";
       else personal=s.hero.name+"が「"+choice.title+"」に応えた。"+(direct?"接近してきた別の契約者を一人倒した。":"")+"衝突の余波が短くなり、"+fmt(saved)+"人が夕刻の災厄を生き延びた。";
     }
-    if(playerDeaths&&quiet)personal="手の甲の令印は、消えかけるたびに"+s.hero.name+"の手の中で一度だけ光った。三度目に、光は戻らなかった。";
+    if(s.causalWar!==true&&playerDeaths&&quiet)personal="手の甲の令印は、消えかけるたびに"+s.hero.name+"の手の中で一度だけ光った。三度目に、光は戻らなかった。";
     if(alive&&quiet&&success&&!moved&&!direct)personal=s.hero.name+"と"+toRegion.name+"で夜を迎えた。遠くの戦いは、今日はここまで届かなかった。";
+    if(s.causalWar===true&&choice&&alive&&!choice.threat){
+      personal=(moved?toRegion.name+"に着いた。":"")+s.hero.name+"と無事に夜を迎えた。";
+    }
     const result={day,hour:"21:00",before:s.active,active,deaths,noonDeaths:f.noonDeaths,eveningDeaths,worldDeaths:deaths-playerDeaths-duelDeaths,personalDeaths:playerDeaths,duelDeaths,otherPersonalDeaths:0,
       regions:ledger,battles:branch,newBattleCount:f.newBattleCount,local:byArea[local.area],news,personal,namedCasualties,hero:s.hero,region,from:original,
       actionId:choice?.id||null,actionTitle:choice?.title||null,routeType:choice?.routeType||null,forecast:choice?.forecast||null,
@@ -438,6 +508,18 @@
     if(s.lifeMode===true){
       result.context=f.context;result.npSaved=result.powerSaved=powerSaved;result.powerArea=effect?effect.target:null;
       result.powerKind=power?power.kind:null;result.powerName=power?power.name:null;
+    }
+    if(s.causalWar===true){
+      result.threat=choice?.threat||null;
+      result.deathCause=playerDeaths?choice.threat.death:null;
+      result.powerPreventedDeath=!!(power&&alive&&choice.forecast.powerSurvivalBonus>0&&
+        dice(s.seed,day,"life")*100>=choice.forecast.survival-choice.forecast.powerSurvivalBonus);
+      if(result.powerPreventedDeath){
+        const site=choice.threat.shelter,bold=s.hero.name+"の宝具「"+power.name+"」";
+        const help=power.kind==="combat"?"が攻撃を押し返し、あなたは"+site+"へ逃げ延びた。":power.kind==="shelter"?"があなたを守った。その間に"+site+"へ避難できた。":"が避難路を見つけ、あなたは"+site+"にたどり着いた。";
+        result.powerRescueText=bold+help;
+        result.personal+=" "+result.powerRescueText;
+      }
     }
     return result;
   }
@@ -474,7 +556,7 @@
     const worldStory="第"+terminal.day+"日。"+terminal.local.a.name+"と"+terminal.local.b.name+"の最終戦を経て、"+
       (win?"あなた":winner.name+"のマスター")+"が人類最後の生存者となった。聖杯への願いは「"+wish+"」。";
     const rank=s.rank, shareText="80億人、最後の聖杯戦争。"+h.name+"と第"+s.day+"日まで生存、"+fmt(rank)+"位。"+
-      (win?"人類最後の一人になった。":s.lifeMode===true&&s.last.killer.kind==="condition"?"最後に相棒の手の中で、令印が消えた。":"最後に見たのは"+s.last.killer.name+"の顕現。")+"聖杯を得たのは"+(win?"私たち":winner.name+"のマスター")+"。";
+      (win?"人類最後の一人になった。":s.causalWar===true?s.last.deathCause:s.lifeMode===true&&s.last.killer.kind==="condition"?"最後に相棒の手の中で、令印が消えた。":"最後に見たのは"+s.last.killer.name+"の顕現。")+"聖杯を得たのは"+(win?"私たち":winner.name+"のマスター")+"。";
     return {title:win?"世界最後の一人":"二人の契約が終わった日",winner,killer:s.last.killer,story,wish,worldStory,shareText,
       worldDay:terminal.day,worldDeaths:TOTAL-1,playerDay:s.day,rank,activeAtExit:s.activeAtExit,saved:s.saved,kills:s.kills,
       stats:{population:TOTAL,rank,kills:s.kills,days:s.day,saved:s.saved,activeAtExit:s.activeAtExit}};

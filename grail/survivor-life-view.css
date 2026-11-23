@@ -69,6 +69,9 @@ body.life-edition:has(.gl-mounted:not([hidden])) .masthead{border-color:#c4c6bf}
 .gl-dilemma h3{font:700 clamp(21px,2.1vw,29px)/1.38 var(--serif);padding:4px 0;letter-spacing:-.035em}
 .gl-prompt-text{font-size:14px;line-height:1.55;color:#39453f}.gl-dilemma .gl-powerbox{margin:12px 0}
 .gl-options{display:grid;gap:6px}
+.gl-scene-risk{margin:5px 0;color:#4b514b;font-size:13px;line-height:1.55}
+.gl-choice-risk{grid-column:1/-1;font-size:12px;line-height:1.45;color:#823d2c;overflow-wrap:anywhere}
+.gl-choice-risk.is-safe{color:#41594c}
 .gl-choice{background:#fffdf8;border:1px solid #b7c2b7;text-align:start;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:3px 7px;padding:9px 12px;min-width:0;width:100%;color:var(--ink);border-radius:4px;transition:background .15s,border-color .15s}
 .gl-choice:enabled:hover{background:#edf1eb;border-color:var(--blue)}.gl-choice:enabled:active{background:#dce7e2}
 .gl-choice-title{font:700 15px/1.4 var(--sans);overflow-wrap:anywhere}.gl-choice-detail{grid-column:1/-1;font-size:12px;line-height:1.45;color:#546158;overflow-wrap:anywhere}
