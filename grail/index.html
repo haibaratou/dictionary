@@ -2,18 +2,19 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#eee9df"><title>人類最後の聖杯戦争｜聖杯戦争通信</title>
+  <meta name="theme-color" content="#10191c"><title>人類最後の聖杯戦争｜聖杯戦争通信</title>
   <meta name="description" content="80億のマスターが同時に参戦。日本語版Wikipediaに登場する人物を相棒に選び、一日一手で世界最後の一組をめざすサバイバル。">
   <link rel="canonical" href="https://haibaratou.github.io/dictionary/grail/">
-  <meta property="og:title" content="人類最後の聖杯戦争"><meta property="og:description" content="80億人から、最後のひとりへ。歴史上の人物と組んで日々の号外を生き抜こう。"><meta property="og:type" content="website">
+  <meta property="og:title" content="人類最後の聖杯戦争"><meta property="og:description" content="80億人から、最後のひとりへ。神々の戦闘が世界を変える。あなたと相棒は何日生き残れるか。"><meta property="og:type" content="website">
   <meta name="twitter:card" content="player"><meta name="twitter:player" content="https://haibaratou.github.io/dictionary/grail/?play=1"><meta name="twitter:player:width" content="700"><meta name="twitter:player:height" content="700">
-  <meta property="og:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg?v=night2"><meta name="twitter:image" content="https://haibaratou.github.io/dictionary/grail/survivor-poster.jpg?v=night2">
-  <link rel="preload" as="image" href="summon-midnight.webp?v=night2">
+  <meta property="og:image" content="https://haibaratou.github.io/dictionary/grail/cataclysm-poster.jpg?v=cat1"><meta name="twitter:image" content="https://haibaratou.github.io/dictionary/grail/cataclysm-poster.jpg?v=cat1">
+  <link rel="preload" as="image" href="cataclysm-panels.webp">
   <link rel="stylesheet" href="survivor.css?v=frontier1"><link rel="stylesheet" href="survivor-relics.css?v=night2"><link rel="stylesheet" href="summon-ceremony.css?v=night2"><link rel="stylesheet" href="survivor-front-view.css?v=frontier1">
   <script defer src="survivor-roster.js"></script><script defer src="survivor-portraits-extra.js?v=night2"></script><script defer src="survivor-illustrated.js?v=night2"></script><script defer src="survivor-relics.js?v=night2"></script><script defer src="survivor-library.js?v=frontier1"></script>
-  <script defer src="survivor-story-v1.js?v=night2"></script><script defer src="survivor-engine-v1.js?v=night2"></script><script defer src="survivor-home.js?v=night2"></script><script defer src="survivor-bonds.js?v=night2"></script><script defer src="survivor-story.js?v=night2"></script><script defer src="survivor-engine.js?v=night2"></script><script defer src="survivor-front-tales.js?v=frontier1"></script><script defer src="survivor-front-events.js?v=frontier1"></script><script defer src="survivor-front-skills.js?v=frontier1"></script><script defer src="survivor-frontier.js?v=frontier1"></script><script defer src="survivor-front-view.js?v=frontier1"></script><script defer src="summon-ceremony.js?v=night2"></script><script defer src="survivor-ui.js?v=frontier1"></script>
+  <script defer src="survivor-story-v1.js?v=night2"></script><script defer src="survivor-engine-v1.js?v=night2"></script><script defer src="survivor-home.js?v=night2"></script><script defer src="survivor-bonds.js?v=night2"></script><script defer src="survivor-story.js?v=night2"></script><script defer src="survivor-engine.js?v=night2"></script><script defer src="survivor-front-tales.js?v=frontier1"></script><script defer src="survivor-front-events.js?v=frontier1"></script><script defer src="survivor-front-skills.js?v=frontier1"></script><script defer src="survivor-frontier.js?v=frontier1"></script><script defer src="survivor-front-view.js?v=frontier1"></script><script defer src="summon-ceremony.js?v=night2"></script><script defer src="survivor-cat-geography.js?v=cat1"></script><script defer src="survivor-cat-lights.js?v=cat1"></script><script defer src="survivor-cat-atlas.js?v=cat1"></script><script defer src="survivor-cat-powers.js?v=cat1"></script><script defer src="survivor-cataclysm.js?v=cat1"></script><script defer src="survivor-cat-ledger.js?v=cat1"></script><script defer src="survivor-cat-view.js?v=cat1"></script><script defer src="survivor-ui.js?v=cat1"></script>
+  <link rel="stylesheet" href="survivor-cat-atlas.css?v=cat1"><link rel="stylesheet" href="survivor-cat-entry.css?v=cat1"><link rel="stylesheet" href="survivor-cat-ledger.css?v=cat1"><link rel="stylesheet" href="survivor-cat-view.css?v=cat1">
 </head>
-<body>
+<body class="cat-edition" data-screen="front">
   <div class="paper">
     <header class="masthead">
       <div class="mast-title"><span class="press-seal" aria-hidden="true">✳</span>聖杯戦争通信</div>
@@ -25,12 +26,13 @@
           <div class="midnight-copy">
             <p class="prologue-time"><i></i> 開戦前夜　23:59</p>
             <h1>人類最後の<br><em>聖杯戦争</em></h1>
-            <p class="prologue">目が覚めると、手のひらが光っていた。<br>向かいのアパートで、ひとつずつ窓が灯る。<br>誰かが、その手を握り返す。</p>
+            <p class="prologue">世界中で、同時に召喚が始まった。<br>あなたも、この中のひとり。</p>
+            <div class="entry-census"><span>開戦時の生存者</span><strong>8,000,000,000</strong><small>人</small></div>
             <button type="button" id="draw" class="button invoke">十騎を召喚する <span aria-hidden="true">✧</span></button>
             <div id="previous-runs"></div>
           </div>
         </div>
-        <div class="opening-note"><span class="live-dot"></span>80億人が参戦。毎日ひとつ行き先を選び、相棒と最後の一組をめざす。</div>
+        <div class="opening-note"><span class="live-dot"></span>英霊同士の戦闘が、海を割り、夜空を焼く。最後のひとりが残るまで。</div>
       </section>
       <section id="draft" hidden>
         <div class="section-heading"><div><p class="rubric"><span></span> 契約候補</p><h2>相棒をひとり選ぶ</h2></div><span class="page-marker" id="draft-count"></span></div>
@@ -47,7 +49,7 @@
       <section id="result" hidden>
         <div class="section-heading"><div><p class="rubric"><span></span> 最終報</p><h2 id="ending-title"></h2></div><span class="page-marker" id="ending-day"></span></div>
         <div id="final-meter"></div><div class="result-grid"><article class="final-article" id="final-article"></article><aside id="final-team"></aside></div><div id="final-history"></div>
-        <div class="result-actions"><a class="button primary" id="share" target="_blank" rel="noopener noreferrer">𝕏 に結果を投稿 <span aria-hidden="true">↗</span></a><button class="button secondary" type="button" id="copy">結果をコピー</button><button class="link-button" type="button" id="again">新しく始める →</button></div>
+        <div class="result-actions"><button class="link-button" type="button" id="again">新しく始める →</button><details><summary>記録を書き出す</summary><button class="button secondary" type="button" id="copy">結果をコピー</button><a class="button secondary" id="share" target="_blank" rel="noopener noreferrer">X に投稿</a></details></div>
         <p id="share-status" role="status"></p>
       </section>
       <p id="status" role="status"></p>
